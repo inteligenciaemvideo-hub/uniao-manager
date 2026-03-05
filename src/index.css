@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 215 50% 5%;
+    --foreground: 0 0% 100%;
+
+    --card: 215 45% 8%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 215 45% 8%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 45 100% 50%;
+    --primary-foreground: 215 50% 5%;
+
+    --secondary: 215 35% 14%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 30% 12%;
+    --muted-foreground: 184 8% 65%;
+
+    --accent: 215 35% 18%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 48 88% 60%;
+    --warning-foreground: 215 50% 5%;
+
+    --border: 215 30% 16%;
+    --input: 215 30% 16%;
+    --ring: 45 100% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 215 45% 6%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 215 50% 5%;
+    --sidebar-accent: 215 35% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 30% 16%;
+    --sidebar-ring: 45 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .gold-glow {
+    box-shadow: 0 0 20px hsl(45 100% 50% / 0.15);
+  }
+
+  .card-elevated {
+    @apply bg-card rounded-xl border border-border p-4;
+    box-shadow: 0 4px 20px hsl(215 50% 5% / 0.5);
+  }
+
+  .text-gold {
+    @apply text-primary;
+  }
+
+  .badge-ok {
+    @apply bg-success/20 text-success text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-pending {
+    @apply bg-destructive/20 text-destructive text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-warning {
+    @apply bg-warning/20 text-warning text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+}
