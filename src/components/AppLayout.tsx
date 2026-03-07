@@ -18,6 +18,9 @@ const AppLayout = () => {
   const { data: teamSettings } = useTeamSettings();
   const updateSettings = useUpdateTeamSettings();
   const logoRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { data: role } = useUserRole(user?.id);
+  const isAdmin = role === "admin";
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
