@@ -1,6 +1,6 @@
 import { useAllProfiles, useAllRoles, approveUser, rejectUser } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Shield, User, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, Shield, User, ArrowLeft, FileText } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
