@@ -341,24 +341,33 @@ export type Database = {
         Row: {
           approved: boolean
           avatar_url: string | null
+          birth_date: string | null
+          cpf: string | null
           created_at: string
           display_name: string
+          document_url: string | null
           id: string
           updated_at: string
         }
         Insert: {
           approved?: boolean
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           display_name?: string
+          document_url?: string | null
           id: string
           updated_at?: string
         }
         Update: {
           approved?: boolean
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           display_name?: string
+          document_url?: string | null
           id?: string
           updated_at?: string
         }
