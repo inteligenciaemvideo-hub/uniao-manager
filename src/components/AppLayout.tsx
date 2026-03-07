@@ -1,7 +1,8 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Users, DollarSign, CalendarCheck, BarChart3, Camera } from "lucide-react";
+import { Home, Users, DollarSign, CalendarCheck, BarChart3, Camera, LogOut, Shield } from "lucide-react";
 import { useRef } from "react";
 import { useTeamSettings, useUpdateTeamSettings, uploadPhoto } from "@/hooks/useSupabase";
+import { useAuth, useUserRole, signOut } from "@/hooks/useAuth";
 
 const navItems = [
   { path: "/", icon: Home, label: "Home" },
@@ -17,6 +18,9 @@ const AppLayout = () => {
   const { data: teamSettings } = useTeamSettings();
   const updateSettings = useUpdateTeamSettings();
   const logoRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { data: role } = useUserRole(user?.id);
+  const isAdmin = role === "admin";
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,9 +50,19 @@ const AppLayout = () => {
           </div>
         </div>
         <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-        <div>
+        <div className="flex-1">
           <h1 className="text-sm font-bold tracking-widest text-primary">DISTRITO UNIÃO</h1>
           <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">Gestão de Elenco</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button onClick={() => navigate("/admin/usuarios")} className="p-2 text-muted-foreground hover:text-primary transition-colors" title="Gerenciar usuários">
+              <Shield size={18} />
+            </button>
+          )}
+          <button onClick={() => signOut()} className="p-2 text-muted-foreground hover:text-destructive transition-colors" title="Sair">
+            <LogOut size={18} />
+          </button>
         </div>
       </header>
 
