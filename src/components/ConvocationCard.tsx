@@ -22,6 +22,12 @@ interface Guest {
   nickname: string;
 }
 
+interface Sponsor {
+  id: string;
+  name: string;
+  logo_url?: string | null;
+}
+
 interface ConvocationCardProps {
   open: boolean;
   onClose: () => void;
@@ -32,6 +38,7 @@ interface ConvocationCardProps {
   location: string;
   players: Player[];
   guests: Guest[];
+  sponsors?: Sponsor[];
 }
 
 const loadImage = (src: string): Promise<HTMLImageElement> =>
@@ -64,7 +71,7 @@ function drawThinSeparator(ctx: CanvasRenderingContext2D, y: number) {
 }
 
 const ConvocationCard = ({
-  open, onClose, eventType, opponent, date, time, location, players, guests
+  open, onClose, eventType, opponent, date, time, location, players, guests, sponsors = []
 }: ConvocationCardProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -207,15 +214,43 @@ const ConvocationCard = ({
       ctx.restore();
     });
 
-    // ============ FOOTER ============
-    drawThinSeparator(ctx, CANVAS_H - 120);
+    // ============ FOOTER - SPONSORS ============
+    const footerY = CANVAS_H - 100;
+    drawThinSeparator(ctx, footerY - 30);
 
-    ctx.save();
-    ctx.font = "400 16px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillStyle = WHITE_DIM + "80";
-    ctx.fillText("APOIO", CANVAS_W / 2, CANVAS_H - 85);
-    ctx.restore();
+    const sponsorsWithLogo = sponsors.filter(s => s.logo_url);
+    if (sponsorsWithLogo.length > 0) {
+      const maxLogoH = 50;
+      const gap = 30;
+      // Calculate total width first
+      const logoImages: { img: HTMLImageElement; w: number; h: number }[] = [];
+      for (const sponsor of sponsorsWithLogo) {
+        try {
+          const img = await loadImage(sponsor.logo_url!);
+          const asp = img.width / img.height;
+          const h = maxLogoH;
+          const w = h * asp;
+          logoImages.push({ img, w, h });
+        } catch { /* skip */ }
+      }
+      const totalW = logoImages.reduce((sum, l) => sum + l.w, 0) + (logoImages.length - 1) * gap;
+      let startX = CANVAS_W / 2 - totalW / 2;
+      for (const logo of logoImages) {
+        ctx.save();
+        ctx.shadowColor = "#000";
+        ctx.shadowBlur = 10;
+        ctx.drawImage(logo.img, startX, footerY - logo.h / 2, logo.w, logo.h);
+        ctx.restore();
+        startX += logo.w + gap;
+      }
+    } else {
+      ctx.save();
+      ctx.font = "400 16px 'Segoe UI', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = WHITE_DIM + "80";
+      ctx.fillText("APOIO", CANVAS_W / 2, footerY - 10);
+      ctx.restore();
+    }
 
     ctx.save();
     ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
@@ -224,7 +259,7 @@ const ConvocationCard = ({
     ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 55);
     ctx.restore();
 
-  }, [players, guests, eventType, opponent, date, time, location]);
+  }, [players, guests, eventType, opponent, date, time, location, sponsors]);
 
   useEffect(() => {
     if (open) draw();
