@@ -402,7 +402,6 @@ const EventDetail = () => {
           </button>
         )}
       </div>
-      </div>
 
       {/* Player Selector Modal */}
       {showSelector && (
