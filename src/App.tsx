@@ -13,6 +13,7 @@ import Attendance from "./pages/Attendance";
 import EventAttendance from "./pages/EventAttendance";
 import EventDetail from "./pages/EventDetail";
 import Stats from "./pages/Stats";
+import Sponsors from "./pages/Sponsors";
 import AddPlayer from "./pages/AddPlayer";
 import AddEvent from "./pages/AddEvent";
 import AdminUsers from "./pages/AdminUsers";
