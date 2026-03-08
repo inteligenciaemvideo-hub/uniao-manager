@@ -30,10 +30,11 @@ const EventDetail = () => {
   const updateEvent = useUpdateEvent();
   const saveMatchEvents = useSaveMatchEvents();
   const recalcStats = useRecalculatePlayerStats();
-  const addSponsor = useAddSponsor();
-  const deleteSponsor = useDeleteSponsor();
+  const updateSponsor = useUpdateSponsor();
   const sponsorLogoRef2 = useRef<HTMLInputElement>(null);
-  const logoRef = useRef<HTMLInputElement>(null);
+  const [selectedSponsorIds, setSelectedSponsorIds] = useState<string[]>([]);
+  const [showSponsorSelector, setShowSponsorSelector] = useState(false);
+  const [updatingLogoSponsorId, setUpdatingLogoSponsorId] = useState<string | null>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
   const [showPostMatch, setShowPostMatch] = useState(false);
