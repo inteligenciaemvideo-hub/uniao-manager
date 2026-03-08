@@ -260,7 +260,13 @@ const Financial = () => {
                         const paid = getPaymentStatus(player.id, month);
                         return (
                           <td key={month} className="text-center py-2.5 px-1">
-                            {paid === undefined ? <span className="text-muted-foreground">—</span> : paid ? <CheckCircle2 size={16} className="mx-auto text-success" /> : <XCircle size={16} className="mx-auto text-destructive" />}
+                            <button
+                              onClick={() => upsertPayment.mutate({ player_id: player.id, month, paid: paid === undefined ? true : !paid })}
+                              className="w-full flex items-center justify-center hover:scale-110 transition-transform"
+                              title={paid === undefined ? "Marcar como pago" : paid ? "Marcar como pendente" : "Marcar como pago"}
+                            >
+                              {paid === undefined ? <span className="text-muted-foreground">—</span> : paid ? <CheckCircle2 size={16} className="mx-auto text-success" /> : <XCircle size={16} className="mx-auto text-destructive" />}
+                            </button>
                           </td>
                         );
                       })}
