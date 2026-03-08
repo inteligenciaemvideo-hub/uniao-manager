@@ -344,6 +344,68 @@ export const useSaveEventGuests = () => {
   });
 };
 
+// ============ MATCH EVENTS (goals/assists) ============
+export const useMatchEvents = (eventId?: string) =>
+  useQuery({
+    queryKey: ["match_events", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("match_events").select("*").eq("event_id", eventId!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventId,
+  });
+
+export const useSaveMatchEvents = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ eventId, events }: {
+      eventId: string;
+      events: { player_id: string; type: string }[];
+    }) => {
+      // Delete existing and re-insert
+      await supabase.from("match_events").delete().eq("event_id", eventId);
+      if (events.length > 0) {
+        const { error } = await supabase.from("match_events").insert(
+          events.map(e => ({ event_id: eventId, ...e }))
+        );
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["match_events"] });
+      qc.invalidateQueries({ queryKey: ["players"] });
+    },
+  });
+};
+
+export const useRecalculatePlayerStats = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      // Get all match events
+      const { data: allEvents, error: evError } = await supabase.from("match_events").select("*");
+      if (evError) throw evError;
+
+      // Aggregate per player
+      const stats: Record<string, { goals: number; assists: number }> = {};
+      for (const e of allEvents || []) {
+        if (!stats[e.player_id]) stats[e.player_id] = { goals: 0, assists: 0 };
+        if (e.type === "goal") stats[e.player_id].goals++;
+        if (e.type === "assist") stats[e.player_id].assists++;
+      }
+
+      // Get all players to reset those with 0
+      const { data: allPlayers } = await supabase.from("players").select("id");
+      for (const p of allPlayers || []) {
+        const s = stats[p.id] || { goals: 0, assists: 0 };
+        await supabase.from("players").update({ goals: s.goals, assists: s.assists }).eq("id", p.id);
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["players"] }),
+  });
+};
+
 // ============ STORAGE ============
 export const uploadPhoto = async (bucket: string, path: string, file: File) => {
   const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
