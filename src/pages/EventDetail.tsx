@@ -37,6 +37,7 @@ const EventDetail = () => {
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
   const [showPostMatch, setShowPostMatch] = useState(false);
+  const [showResultFlyer, setShowResultFlyer] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
