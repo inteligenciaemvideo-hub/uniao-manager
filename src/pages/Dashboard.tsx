@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, CalendarCheck, Swords, AlertTriangle, Trophy, Plus, ClipboardList, CreditCard } from "lucide-react";
+import { Users, DollarSign, CalendarCheck, Swords, AlertTriangle, Trophy, Plus, ClipboardList, CreditCard, Image } from "lucide-react";
 import { usePlayers, useEvents, useFinancials, useMonthlyPayments, useTeamSettings } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import FlyerGenerator from "@/components/FlyerGenerator";
 
 const Dashboard = () => {
   const navigate = useNavigate();
