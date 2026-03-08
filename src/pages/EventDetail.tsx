@@ -31,7 +31,8 @@ const EventDetail = () => {
   const recalcStats = useRecalculatePlayerStats();
   const addSponsor = useAddSponsor();
   const deleteSponsor = useDeleteSponsor();
-  const sponsorLogoRef = useRef<HTMLInputElement>(null);
+  const sponsorLogoRef2 = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
   const [showPostMatch, setShowPostMatch] = useState(false);
