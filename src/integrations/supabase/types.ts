@@ -347,6 +347,7 @@ export type Database = {
           display_name: string
           document_url: string | null
           id: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -358,6 +359,7 @@ export type Database = {
           display_name?: string
           document_url?: string | null
           id: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -369,6 +371,7 @@ export type Database = {
           display_name?: string
           document_url?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
