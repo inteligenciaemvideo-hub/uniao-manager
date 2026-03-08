@@ -36,21 +36,7 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="flex items-center gap-3 px-5 py-4 border-b border-border bg-card">
-        <div
-          className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg overflow-hidden cursor-pointer relative group"
-          onClick={() => logoRef.current?.click()}
-        >
-          {teamLogo ? (
-            <img src={teamLogo} alt="Logo" className="w-full h-full object-cover" />
-          ) : (
-            "DU"
-          )}
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-            <Camera size={14} className="text-white" />
-          </div>
-        </div>
-        <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-        <img src="/images/distrito-uniao-logo.png" alt="Distrito União" className="w-8 h-8 object-contain" />
+        <img src="/images/distrito-uniao-logo.png" alt="Distrito União" className="w-10 h-10 object-contain" />
         <div className="flex-1">
           <h1 className="text-sm font-bold tracking-widest text-primary">DISTRITO UNIÃO</h1>
         </div>
