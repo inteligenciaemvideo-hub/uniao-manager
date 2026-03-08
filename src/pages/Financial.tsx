@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Plus, CheckCircle2, XCircle, FileDown, FileSpreadsheet, X } from "lucide-react";
-import { usePlayers, useFinancials, useMonthlyPayments, useAddFinancial } from "@/hooks/useSupabase";
+import { usePlayers, useFinancials, useMonthlyPayments, useAddFinancial, useUpsertPayment } from "@/hooks/useSupabase";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 
-const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
+const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const categoriesEntrada = ["Mensalidade", "Patrocínio", "Evento", "Doação", "Outros"];
 const categoriesSaida = ["Material", "Arbitragem", "Campo", "Transporte", "Alimentação", "Outros"];
@@ -20,6 +20,7 @@ const Financial = () => {
   const { data: players = [] } = usePlayers();
   const { data: payments = [] } = useMonthlyPayments();
   const addFinancial = useAddFinancial();
+  const upsertPayment = useUpsertPayment();
   const { toast } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -259,7 +260,13 @@ const Financial = () => {
                         const paid = getPaymentStatus(player.id, month);
                         return (
                           <td key={month} className="text-center py-2.5 px-1">
-                            {paid === undefined ? <span className="text-muted-foreground">—</span> : paid ? <CheckCircle2 size={16} className="mx-auto text-success" /> : <XCircle size={16} className="mx-auto text-destructive" />}
+                            <button
+                              onClick={() => upsertPayment.mutate({ player_id: player.id, month, paid: paid === undefined ? true : !paid })}
+                              className="w-full flex items-center justify-center hover:scale-110 transition-transform"
+                              title={paid === undefined ? "Marcar como pago" : paid ? "Marcar como pendente" : "Marcar como pago"}
+                            >
+                              {paid === undefined ? <span className="text-muted-foreground">—</span> : paid ? <CheckCircle2 size={16} className="mx-auto text-success" /> : <XCircle size={16} className="mx-auto text-destructive" />}
+                            </button>
                           </td>
                         );
                       })}

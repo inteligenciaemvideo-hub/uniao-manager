@@ -178,7 +178,7 @@ const PlayerDetail = () => {
             Mensalidades · {pendingMonths > 0 ? <span className="text-destructive">{pendingMonths} pendentes</span> : <span className="text-success">Em dia</span>}
           </h4>
           <div className="grid grid-cols-6 gap-2">
-            {months.slice(0, 6).map(month => {
+            {months.map(month => {
               const paid = paymentMap[month];
               return (
                 <div key={month} className="text-center">

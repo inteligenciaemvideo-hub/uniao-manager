@@ -1,6 +1,6 @@
 import { useAllProfiles, useAllRoles, approveUser, rejectUser } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Shield, User, ArrowLeft, FileText } from "lucide-react";
+import { CheckCircle2, XCircle, Shield, User, ArrowLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -66,11 +66,6 @@ const AdminUsers = () => {
                       {p.birth_date && ` · Nasc: ${p.birth_date}`}
                       {p.phone && ` · Tel: ${p.phone}`}
                     </p>
-                    {p.document_url && (
-                      <a href={p.document_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
-                        <FileText size={12} /> Ver documento
-                      </a>
-                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
