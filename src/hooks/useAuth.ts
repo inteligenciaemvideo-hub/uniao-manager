@@ -81,12 +81,12 @@ export const useAllRoles = () =>
     },
   });
 
-export const signUp = async (email: string, password: string, displayName: string, cpf?: string, birthDate?: string) => {
+export const signUp = async (email: string, password: string, displayName: string, cpf?: string, birthDate?: string, phone?: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { display_name: displayName, cpf, birth_date: birthDate },
+      data: { display_name: displayName, cpf, birth_date: birthDate, phone },
       emailRedirectTo: window.location.origin,
     },
   });
