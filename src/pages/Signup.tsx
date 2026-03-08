@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { signUp } from "@/hooks/useAuth";
-import { uploadPhoto } from "@/hooks/useSupabase";
-import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, CheckCircle2, Camera, Upload } from "lucide-react";
+import { UserPlus, CheckCircle2 } from "lucide-react";
 
 const formatCPF = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -16,27 +14,23 @@ const formatCPF = (value: string) => {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 };
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [docFile, setDocFile] = useState<File | null>(null);
-  const [docPreview, setDocPreview] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
-
-  const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setDocFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setDocPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,37 +47,15 @@ const Signup = () => {
       toast({ title: "Data de nascimento obrigatória", variant: "destructive" });
       return;
     }
-    if (!docFile) {
-      toast({ title: "Documento obrigatório", description: "Anexe uma foto do documento com foto", variant: "destructive" });
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      toast({ title: "Telefone inválido", description: "Informe um número válido com DDD", variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      // Sign up first
-      const result = await signUp(email, password, displayName, cpfDigits, birthDate);
-      const userId = result.user?.id;
-
-      // Upload document photo
-      if (userId && docFile) {
-        const ext = docFile.name.split(".").pop();
-        const path = `docs/${userId}/${Date.now()}.${ext}`;
-        const docUrl = await uploadPhoto("documents", path, docFile);
-        
-        // Update profile with document URL (need to wait for trigger to create profile)
-        // We'll retry a few times since the trigger runs async
-        let retries = 3;
-        while (retries > 0) {
-          const { error } = await supabase
-            .from("profiles")
-            .update({ document_url: docUrl })
-            .eq("id", userId);
-          if (!error) break;
-          retries--;
-          if (retries > 0) await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-
+      await signUp(email, password, displayName, cpfDigits, birthDate, phoneDigits);
       setSuccess(true);
     } catch (err: any) {
       toast({ title: "Erro ao cadastrar", description: err.message, variant: "destructive" });
@@ -147,37 +119,13 @@ const Signup = () => {
               required
             />
           </div>
-
-          {/* Document upload */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Documento com foto (RG, CNH, etc)</label>
-            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
-              {docPreview ? (
-                <img src={docPreview} alt="Documento" className="max-h-40 rounded object-contain" />
-              ) : (
-                <>
-                  <div className="flex gap-2 text-muted-foreground">
-                    <Camera size={20} />
-                    <Upload size={20} />
-                  </div>
-                  <span className="text-xs text-muted-foreground text-center">
-                    Tire uma foto ou anexe o documento
-                  </span>
-                </>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleDocChange}
-              />
-              {docFile && (
-                <span className="text-xs text-primary">{docFile.name}</span>
-              )}
-            </label>
-          </div>
-
+          <Input
+            placeholder="Telefone (com DDD)"
+            value={phone}
+            onChange={(e) => setPhone(formatPhone(e.target.value))}
+            required
+            inputMode="tel"
+          />
           <Input
             type="password"
             placeholder="Senha (mínimo 6 caracteres)"
