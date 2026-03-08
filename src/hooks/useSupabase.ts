@@ -316,6 +316,34 @@ export const useUpdateTeamSettings = () => {
   });
 };
 
+// ============ EVENT GUESTS ============
+export const useEventGuests = (eventId?: string) =>
+  useQuery({
+    queryKey: ["event_guests", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("event_guests").select("*").eq("event_id", eventId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventId,
+  });
+
+export const useSaveEventGuests = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ eventId, nicknames }: { eventId: string; nicknames: string[] }) => {
+      await supabase.from("event_guests").delete().eq("event_id", eventId);
+      if (nicknames.length > 0) {
+        const { error } = await supabase.from("event_guests").insert(
+          nicknames.map(nickname => ({ event_id: eventId, nickname }))
+        );
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["event_guests"] }),
+  });
+};
+
 // ============ STORAGE ============
 export const uploadPhoto = async (bucket: string, path: string, file: File) => {
   const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
