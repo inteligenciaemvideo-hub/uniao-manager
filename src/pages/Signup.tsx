@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { signUp } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -55,10 +56,26 @@ const Signup = () => {
 
     setLoading(true);
     try {
+      // Verificar duplicatas via função segura
+      const { data: check } = await supabase.rpc("check_duplicate_registration", {
+        _cpf: cpfDigits,
+        _phone: phoneDigits,
+      });
+      const result = check as any;
+      if (result?.duplicate) {
+        const fieldName = result.field === "cpf" ? "CPF" : "Telefone";
+        toast({ title: `${fieldName} já cadastrado`, description: `Já existe uma conta com este ${fieldName}`, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
       await signUp(email, password, displayName, cpfDigits, birthDate, phoneDigits);
       setSuccess(true);
     } catch (err: any) {
-      toast({ title: "Erro ao cadastrar", description: err.message, variant: "destructive" });
+      const msg = err.message?.includes("already registered")
+        ? "Este email já está cadastrado"
+        : err.message;
+      toast({ title: "Erro ao cadastrar", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
