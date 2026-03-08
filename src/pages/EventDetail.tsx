@@ -184,6 +184,9 @@ const EventDetail = () => {
       {/* Actions */}
       <div className="px-4 space-y-3">
         <button onClick={() => navigate(`/compromissos/${event.id}`)} className="w-full py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm flex items-center justify-center gap-2"><CalendarCheck size={16} />Fazer Chamada</button>
+        {event.opponent && (
+          <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2"><ImageIcon size={16} />Gerar Flyer</button>
+        )}
         <button onClick={exportPDF} className="w-full py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"><FileDown size={16} />Exportar Relação em PDF</button>
       </div>
 
