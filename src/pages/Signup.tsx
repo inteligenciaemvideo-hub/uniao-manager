@@ -55,10 +55,37 @@ const Signup = () => {
 
     setLoading(true);
     try {
+      // Verificar se já existe conta com mesmo CPF
+      const { data: existingCpf } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("cpf", cpfDigits)
+        .maybeSingle();
+      if (existingCpf) {
+        toast({ title: "CPF já cadastrado", description: "Já existe uma conta com este CPF", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Verificar se já existe conta com mesmo telefone
+      const { data: existingPhone } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("phone", phoneDigits)
+        .maybeSingle();
+      if (existingPhone) {
+        toast({ title: "Telefone já cadastrado", description: "Já existe uma conta com este telefone", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
       await signUp(email, password, displayName, cpfDigits, birthDate, phoneDigits);
       setSuccess(true);
     } catch (err: any) {
-      toast({ title: "Erro ao cadastrar", description: err.message, variant: "destructive" });
+      const msg = err.message?.includes("already registered")
+        ? "Este email já está cadastrado"
+        : err.message;
+      toast({ title: "Erro ao cadastrar", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
