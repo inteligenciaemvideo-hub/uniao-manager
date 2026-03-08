@@ -20,6 +20,7 @@ const Financial = () => {
   const { data: players = [] } = usePlayers();
   const { data: payments = [] } = useMonthlyPayments();
   const addFinancial = useAddFinancial();
+  const upsertPayment = useUpsertPayment();
   const { toast } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
