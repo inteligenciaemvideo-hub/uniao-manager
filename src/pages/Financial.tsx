@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 
-const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
+const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const categoriesEntrada = ["Mensalidade", "Patrocínio", "Evento", "Doação", "Outros"];
 const categoriesSaida = ["Material", "Arbitragem", "Campo", "Transporte", "Alimentação", "Outros"];
