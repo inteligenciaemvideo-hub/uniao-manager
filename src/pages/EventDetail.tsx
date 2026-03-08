@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle, Instagram, Trophy, Target, Handshake, Minus } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle, Instagram, Trophy, Target, Handshake, Minus, SquareSlash, CircleX } from "lucide-react";
 import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto, useEventGuests, useSaveEventGuests, useMatchEvents, useSaveMatchEvents, useRecalculatePlayerStats, useSponsors, useAddSponsor, useDeleteSponsor } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import FlyerGenerator from "@/components/FlyerGenerator";
 import ConvocationCard from "@/components/ConvocationCard";
+import ResultFlyerGenerator from "@/components/ResultFlyerGenerator";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -36,6 +37,7 @@ const EventDetail = () => {
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
   const [showPostMatch, setShowPostMatch] = useState(false);
+  const [showResultFlyer, setShowResultFlyer] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
@@ -404,14 +406,24 @@ const EventDetail = () => {
           </div>
         )}
 
-        {/* Post-match button */}
-        {event.type === "Jogo" && convocationConfirmed && convoked.length > 0 && (
-          <button
-            onClick={() => setShowPostMatch(true)}
-            className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2"
-          >
-            <Trophy size={16} />Pós-Jogo (Resultado & Stats)
-          </button>
+        {/* Post-match button - for Jogo, Amistoso, Torneio */}
+        {(event.type === "Jogo" || event.type === "Amistoso" || event.type === "Torneio") && convocationConfirmed && convoked.length > 0 && (
+          <>
+            <button
+              onClick={() => setShowPostMatch(true)}
+              className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2"
+            >
+              <Trophy size={16} />Pós-Jogo (Resultado & Stats)
+            </button>
+            {event.home_score !== null && event.away_score !== null && (
+              <button
+                onClick={() => setShowResultFlyer(true)}
+                className="w-full py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"
+              >
+                <Instagram size={16} />Flyer de Resultado
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -697,10 +709,17 @@ const EventDetail = () => {
                 <div className="space-y-2 mb-3">
                   {goalEntries.map((entry, i) => {
                     const player = convokedPlayers.find(p => p.id === entry.player_id);
+                    const typeLabels: Record<string, { label: string; cls: string }> = {
+                      goal: { label: "⚽ Gol", cls: "bg-primary/20 text-primary" },
+                      assist: { label: "👟 Assist.", cls: "bg-accent/20 text-accent-foreground" },
+                      yellow_card: { label: "🟨 Amarelo", cls: "bg-yellow-500/20 text-yellow-400" },
+                      red_card: { label: "🟥 Vermelho", cls: "bg-destructive/20 text-destructive" },
+                    };
+                    const t = typeLabels[entry.type] || typeLabels.goal;
                     return (
                       <div key={i} className="flex items-center gap-2 py-2 px-3 rounded-lg bg-secondary/50">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.type === "goal" ? "bg-primary/20 text-primary" : "bg-accent/20 text-accent-foreground"}`}>
-                          {entry.type === "goal" ? "⚽ Gol" : "👟 Assist."}
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.cls}`}>
+                          {t.label}
                         </span>
                         <span className="text-sm flex-1">{player?.name || "?"}</span>
                         <button onClick={() => setGoalEntries(prev => prev.filter((_, idx) => idx !== i))} className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center">
@@ -711,10 +730,12 @@ const EventDetail = () => {
                   })}
                 </div>
 
-                <p className="text-[10px] text-muted-foreground mb-2">Toque no atleta para adicionar gol ou assistência:</p>
+                <p className="text-[10px] text-muted-foreground mb-2">Toque no atleta para adicionar gol, assistência ou cartão:</p>
                 {convokedPlayers.map(player => {
                   const playerGoals = goalEntries.filter(e => e.player_id === player.id && e.type === "goal").length;
                   const playerAssists = goalEntries.filter(e => e.player_id === player.id && e.type === "assist").length;
+                  const playerYellows = goalEntries.filter(e => e.player_id === player.id && e.type === "yellow_card").length;
+                  const playerReds = goalEntries.filter(e => e.player_id === player.id && e.type === "red_card").length;
                   return (
                     <div key={player.id} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
                       <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
@@ -722,18 +743,30 @@ const EventDetail = () => {
                         <p className="text-sm font-medium truncate">{player.name}</p>
                         <p className="text-[10px] text-muted-foreground">#{player.number}</p>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap justify-end">
                         <button
                           onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "goal" }])}
                           className="h-7 px-2 rounded-lg bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 border border-primary/30"
                         >
-                          <Target size={10} /> Gol {playerGoals > 0 && `(${playerGoals})`}
+                          <Target size={10} /> ⚽ {playerGoals > 0 && `(${playerGoals})`}
                         </button>
                         <button
                           onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "assist" }])}
                           className="h-7 px-2 rounded-lg bg-accent/10 text-accent-foreground text-[10px] font-bold flex items-center gap-1 border border-accent/30"
                         >
-                          <Handshake size={10} /> Assist. {playerAssists > 0 && `(${playerAssists})`}
+                          <Handshake size={10} /> 👟 {playerAssists > 0 && `(${playerAssists})`}
+                        </button>
+                        <button
+                          onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "yellow_card" }])}
+                          className="h-7 px-2 rounded-lg bg-yellow-500/10 text-yellow-400 text-[10px] font-bold flex items-center gap-1 border border-yellow-500/30"
+                        >
+                          <SquareSlash size={10} /> 🟨 {playerYellows > 0 && `(${playerYellows})`}
+                        </button>
+                        <button
+                          onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "red_card" }])}
+                          className="h-7 px-2 rounded-lg bg-destructive/10 text-destructive text-[10px] font-bold flex items-center gap-1 border border-destructive/30"
+                        >
+                          <CircleX size={10} /> 🟥 {playerReds > 0 && `(${playerReds})`}
                         </button>
                       </div>
                     </div>
@@ -766,6 +799,27 @@ const EventDetail = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Result Flyer Generator */}
+      {event.opponent && (
+        <ResultFlyerGenerator
+          open={showResultFlyer}
+          onClose={() => setShowResultFlyer(false)}
+          eventType={event.type}
+          opponent={event.opponent}
+          date={event.date}
+          time={event.time}
+          location={event.location}
+          opponentLogoUrl={event.opponent_logo_url}
+          homeScore={event.home_score ?? 0}
+          awayScore={event.away_score ?? 0}
+          matchEntries={matchEvents.map((e: any) => {
+            const player = convokedPlayers.find(p => p.id === e.player_id);
+            return { player_id: e.player_id, player_name: player?.name || "?", type: e.type };
+          })}
+          sponsors={sponsors}
+        />
       )}
     </div>
   );

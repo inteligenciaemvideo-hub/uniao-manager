@@ -383,23 +383,25 @@ export const useRecalculatePlayerStats = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      // Get all match events
       const { data: allEvents, error: evError } = await supabase.from("match_events").select("*");
       if (evError) throw evError;
 
-      // Aggregate per player
-      const stats: Record<string, { goals: number; assists: number }> = {};
+      const stats: Record<string, { goals: number; assists: number; yellow_cards: number; red_cards: number }> = {};
       for (const e of allEvents || []) {
-        if (!stats[e.player_id]) stats[e.player_id] = { goals: 0, assists: 0 };
+        if (!stats[e.player_id]) stats[e.player_id] = { goals: 0, assists: 0, yellow_cards: 0, red_cards: 0 };
         if (e.type === "goal") stats[e.player_id].goals++;
         if (e.type === "assist") stats[e.player_id].assists++;
+        if (e.type === "yellow_card") stats[e.player_id].yellow_cards++;
+        if (e.type === "red_card") stats[e.player_id].red_cards++;
       }
 
-      // Get all players to reset those with 0
       const { data: allPlayers } = await supabase.from("players").select("id");
       for (const p of allPlayers || []) {
-        const s = stats[p.id] || { goals: 0, assists: 0 };
-        await supabase.from("players").update({ goals: s.goals, assists: s.assists }).eq("id", p.id);
+        const s = stats[p.id] || { goals: 0, assists: 0, yellow_cards: 0, red_cards: 0 };
+        await supabase.from("players").update({
+          goals: s.goals, assists: s.assists,
+          yellow_cards: s.yellow_cards, red_cards: s.red_cards,
+        }).eq("id", p.id);
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["players"] }),
