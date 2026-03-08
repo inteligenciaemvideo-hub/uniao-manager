@@ -22,13 +22,16 @@ const EventDetail = () => {
   const { data: teamSettings } = useTeamSettings();
   const { data: guests = [] } = useEventGuests(id);
   const { data: matchEvents = [] } = useMatchEvents(id);
+  const { data: sponsors = [] } = useSponsors();
   const saveConvocations = useSaveConvocations();
   const saveAbsences = useSaveScheduledAbsences();
   const saveGuests = useSaveEventGuests();
   const updateEvent = useUpdateEvent();
   const saveMatchEvents = useSaveMatchEvents();
   const recalcStats = useRecalculatePlayerStats();
-  const logoRef = useRef<HTMLInputElement>(null);
+  const addSponsor = useAddSponsor();
+  const deleteSponsor = useDeleteSponsor();
+  const sponsorLogoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
   const [showPostMatch, setShowPostMatch] = useState(false);
