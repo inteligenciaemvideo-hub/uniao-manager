@@ -284,6 +284,14 @@ const EventDetail = () => {
             <div className="flex items-center gap-3 text-muted-foreground"><CalendarCheck size={14} /><span>{new Date(event.date).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span></div>
             <div className="flex items-center gap-3 text-muted-foreground"><Clock size={14} /><span>{event.time}</span></div>
             <div className="flex items-center gap-3 text-muted-foreground"><MapPin size={14} /><span>{event.location}</span></div>
+            {event.home_score !== null && event.away_score !== null && (
+              <div className="flex items-center gap-3 mt-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                <Trophy size={14} className="text-primary" />
+                <span className="text-sm font-bold text-foreground">
+                  Distrito União {event.home_score} × {event.away_score} {event.opponent || "Adversário"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
