@@ -83,6 +83,14 @@ const Dashboard = () => {
           </div>
           <p className="text-sm font-bold">vs. {nextGame?.opponent || "—"}</p>
           <p className="text-[10px] text-muted-foreground">{nextGame?.date ? new Date(nextGame.date).toLocaleDateString("pt-BR") : "—"}</p>
+          {nextGame && (
+            <button
+              onClick={() => { setFlyerEvent(nextGame); setFlyerOpen(true); }}
+              className="mt-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-primary/15 text-primary text-[11px] font-semibold hover:bg-primary/25 transition-colors"
+            >
+              <Image size={13} /> Gerar Flyer
+            </button>
+          )}
         </div>
       </div>
 
