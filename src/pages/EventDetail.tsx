@@ -800,6 +800,27 @@ const EventDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Result Flyer Generator */}
+      {event.opponent && (
+        <ResultFlyerGenerator
+          open={showResultFlyer}
+          onClose={() => setShowResultFlyer(false)}
+          eventType={event.type}
+          opponent={event.opponent}
+          date={event.date}
+          time={event.time}
+          location={event.location}
+          opponentLogoUrl={event.opponent_logo_url}
+          homeScore={event.home_score ?? 0}
+          awayScore={event.away_score ?? 0}
+          matchEntries={matchEvents.map((e: any) => {
+            const player = convokedPlayers.find(p => p.id === e.player_id);
+            return { player_id: e.player_id, player_name: player?.name || "?", type: e.type };
+          })}
+          sponsors={sponsors}
+        />
+      )}
     </div>
   );
 };
