@@ -401,8 +401,8 @@ const Stats = () => {
         ),
       )}
 
-      {/* Hidden canvas for export */}
-      <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} className="hidden" />
+      {/* Hidden canvas for generation (only visible when no modal) */}
+      {!exportType && <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} className="hidden" />}
 
       {/* Export modal */}
       {exportType && (
