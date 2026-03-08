@@ -13,6 +13,7 @@ import Attendance from "./pages/Attendance";
 import EventAttendance from "./pages/EventAttendance";
 import EventDetail from "./pages/EventDetail";
 import Stats from "./pages/Stats";
+import Sponsors from "./pages/Sponsors";
 import AddPlayer from "./pages/AddPlayer";
 import AddEvent from "./pages/AddEvent";
 import AdminUsers from "./pages/AdminUsers";
@@ -58,6 +59,7 @@ const ProtectedRoutes = () => {
         <Route path="/compromissos/:id" element={<EventAttendance />} />
         <Route path="/evento/:id" element={<EventDetail />} />
         <Route path="/stats" element={<Stats />} />
+        <Route path="/patrocinios" element={<Sponsors />} />
         <Route path="/novo-atleta" element={<AddPlayer />} />
         <Route path="/novo-evento" element={<AddEvent />} />
         {isAdmin && <Route path="/admin/usuarios" element={<AdminUsers />} />}

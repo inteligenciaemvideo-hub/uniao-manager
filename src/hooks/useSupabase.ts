@@ -422,10 +422,21 @@ export const useSponsors = () =>
 export const useAddSponsor = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (sponsor: { name: string; logo_url?: string }) => {
-      const { data, error } = await supabase.from("team_sponsors").insert(sponsor).select().single();
+    mutationFn: async (sponsor: { name: string; logo_url?: string | null; [key: string]: any }) => {
+      const { data, error } = await supabase.from("team_sponsors").insert(sponsor as any).select().single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sponsors"] }),
+  });
+};
+
+export const useUpdateSponsor = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { error } = await supabase.from("team_sponsors").update(updates).eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sponsors"] }),
   });
