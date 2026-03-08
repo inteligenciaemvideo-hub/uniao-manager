@@ -50,6 +50,7 @@ const AppLayout = () => {
           </div>
         </div>
         <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+        <img src="/images/distrito-uniao-logo.png" alt="Distrito União" className="w-8 h-8 object-contain" />
         <div className="flex-1">
           <h1 className="text-sm font-bold tracking-widest text-primary">DISTRITO UNIÃO</h1>
           <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">Gestão de Elenco</p>
