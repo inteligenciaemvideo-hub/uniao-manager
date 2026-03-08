@@ -723,10 +723,12 @@ const EventDetail = () => {
                   })}
                 </div>
 
-                <p className="text-[10px] text-muted-foreground mb-2">Toque no atleta para adicionar gol ou assistência:</p>
+                <p className="text-[10px] text-muted-foreground mb-2">Toque no atleta para adicionar gol, assistência ou cartão:</p>
                 {convokedPlayers.map(player => {
                   const playerGoals = goalEntries.filter(e => e.player_id === player.id && e.type === "goal").length;
                   const playerAssists = goalEntries.filter(e => e.player_id === player.id && e.type === "assist").length;
+                  const playerYellows = goalEntries.filter(e => e.player_id === player.id && e.type === "yellow_card").length;
+                  const playerReds = goalEntries.filter(e => e.player_id === player.id && e.type === "red_card").length;
                   return (
                     <div key={player.id} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
                       <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
@@ -734,18 +736,30 @@ const EventDetail = () => {
                         <p className="text-sm font-medium truncate">{player.name}</p>
                         <p className="text-[10px] text-muted-foreground">#{player.number}</p>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap justify-end">
                         <button
                           onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "goal" }])}
                           className="h-7 px-2 rounded-lg bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 border border-primary/30"
                         >
-                          <Target size={10} /> Gol {playerGoals > 0 && `(${playerGoals})`}
+                          <Target size={10} /> ⚽ {playerGoals > 0 && `(${playerGoals})`}
                         </button>
                         <button
                           onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "assist" }])}
                           className="h-7 px-2 rounded-lg bg-accent/10 text-accent-foreground text-[10px] font-bold flex items-center gap-1 border border-accent/30"
                         >
-                          <Handshake size={10} /> Assist. {playerAssists > 0 && `(${playerAssists})`}
+                          <Handshake size={10} /> 👟 {playerAssists > 0 && `(${playerAssists})`}
+                        </button>
+                        <button
+                          onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "yellow_card" }])}
+                          className="h-7 px-2 rounded-lg bg-yellow-500/10 text-yellow-400 text-[10px] font-bold flex items-center gap-1 border border-yellow-500/30"
+                        >
+                          <SquareSlash size={10} /> 🟨 {playerYellows > 0 && `(${playerYellows})`}
+                        </button>
+                        <button
+                          onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "red_card" }])}
+                          className="h-7 px-2 rounded-lg bg-destructive/10 text-destructive text-[10px] font-bold flex items-center gap-1 border border-destructive/30"
+                        >
+                          <CircleX size={10} /> 🟥 {playerReds > 0 && `(${playerReds})`}
                         </button>
                       </div>
                     </div>
