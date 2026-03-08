@@ -233,7 +233,6 @@ const EventDetail = () => {
           date={event.date}
           time={event.time}
           location={event.location}
-          teamLogoUrl={teamSettings?.team_logo_url}
           opponentLogoUrl={event.opponent_logo_url}
           homeScore={(event as any).home_score}
           awayScore={(event as any).away_score}
