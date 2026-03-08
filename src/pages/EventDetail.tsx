@@ -391,6 +391,17 @@ const EventDetail = () => {
             </button>
           </div>
         )}
+
+        {/* Post-match button */}
+        {event.type === "Jogo" && convocationConfirmed && convoked.length > 0 && (
+          <button
+            onClick={() => setShowPostMatch(true)}
+            className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2"
+          >
+            <Trophy size={16} />Pós-Jogo (Resultado & Stats)
+          </button>
+        )}
+      </div>
       </div>
 
       {/* Player Selector Modal */}
