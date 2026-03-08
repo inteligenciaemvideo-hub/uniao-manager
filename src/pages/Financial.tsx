@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Plus, CheckCircle2, XCircle, FileDown, FileSpreadsheet, X } from "lucide-react";
-import { usePlayers, useFinancials, useMonthlyPayments, useAddFinancial } from "@/hooks/useSupabase";
+import { usePlayers, useFinancials, useMonthlyPayments, useAddFinancial, useUpsertPayment } from "@/hooks/useSupabase";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
