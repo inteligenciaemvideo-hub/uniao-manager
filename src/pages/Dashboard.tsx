@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, CalendarCheck, Swords, AlertTriangle, Trophy, Plus, ClipboardList, CreditCard } from "lucide-react";
+import { Users, DollarSign, CalendarCheck, Swords, AlertTriangle, Trophy, Plus, ClipboardList, CreditCard, Image } from "lucide-react";
 import { usePlayers, useEvents, useFinancials, useMonthlyPayments, useTeamSettings } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import FlyerGenerator from "@/components/FlyerGenerator";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [flyerOpen, setFlyerOpen] = useState(false);
+  const [flyerEvent, setFlyerEvent] = useState<any>(null);
   const { data: players = [] } = usePlayers();
   const { data: events = [] } = useEvents();
   const { data: financials = [] } = useFinancials();
@@ -79,6 +83,14 @@ const Dashboard = () => {
           </div>
           <p className="text-sm font-bold">vs. {nextGame?.opponent || "—"}</p>
           <p className="text-[10px] text-muted-foreground">{nextGame?.date ? new Date(nextGame.date).toLocaleDateString("pt-BR") : "—"}</p>
+          {nextGame && (
+            <button
+              onClick={() => { setFlyerEvent(nextGame); setFlyerOpen(true); }}
+              className="mt-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-primary/15 text-primary text-[11px] font-semibold hover:bg-primary/25 transition-colors"
+            >
+              <Image size={13} /> Gerar Flyer
+            </button>
+          )}
         </div>
       </div>
 
@@ -145,6 +157,21 @@ const Dashboard = () => {
           <span className="text-[10px] font-medium text-muted-foreground">Novo Atleta</span>
         </button>
       </div>
+
+      {flyerEvent && (
+        <FlyerGenerator
+          open={flyerOpen}
+          onClose={() => setFlyerOpen(false)}
+          eventType={flyerEvent.type}
+          opponent={flyerEvent.opponent || ""}
+          date={flyerEvent.date}
+          time={flyerEvent.time}
+          location={flyerEvent.location}
+          opponentLogoUrl={flyerEvent.opponent_logo_url}
+          homeScore={flyerEvent.home_score}
+          awayScore={flyerEvent.away_score}
+        />
+      )}
     </div>
   );
 };
