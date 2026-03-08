@@ -92,6 +92,35 @@ export type Database = {
           },
         ]
       }
+      event_guests: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          nickname: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          nickname: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          nickname?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_guests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           away_score: number | null
