@@ -21,13 +21,17 @@ const EventDetail = () => {
   const { data: absences = [] } = useScheduledAbsences(id);
   const { data: teamSettings } = useTeamSettings();
   const { data: guests = [] } = useEventGuests(id);
+  const { data: matchEvents = [] } = useMatchEvents(id);
   const saveConvocations = useSaveConvocations();
   const saveAbsences = useSaveScheduledAbsences();
   const saveGuests = useSaveEventGuests();
   const updateEvent = useUpdateEvent();
+  const saveMatchEvents = useSaveMatchEvents();
+  const recalcStats = useRecalculatePlayerStats();
   const logoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
+  const [showPostMatch, setShowPostMatch] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
@@ -38,6 +42,24 @@ const EventDetail = () => {
   const [guestNicknames, setGuestNicknames] = useState<string[]>([]);
   const [newGuestName, setNewGuestName] = useState("");
   const [convocationConfirmed, setConvocationConfirmed] = useState(convoked.length > 0);
+
+  // Post-match state
+  const [homeScore, setHomeScore] = useState<number>(event?.home_score ?? 0);
+  const [awayScore, setAwayScore] = useState<number>(event?.away_score ?? 0);
+  const [goalEntries, setGoalEntries] = useState<{ player_id: string; type: string }[]>([]);
+
+  useEffect(() => {
+    if (event) {
+      setHomeScore(event.home_score ?? 0);
+      setAwayScore(event.away_score ?? 0);
+    }
+  }, [event?.id, event?.home_score, event?.away_score]);
+
+  useEffect(() => {
+    if (matchEvents.length > 0) {
+      setGoalEntries(matchEvents.map((e: any) => ({ player_id: e.player_id, type: e.type })));
+    }
+  }, [matchEvents]);
 
   if (!event) {
     return <div className="px-4 py-10 text-center text-muted-foreground">Evento não encontrado</div>;
