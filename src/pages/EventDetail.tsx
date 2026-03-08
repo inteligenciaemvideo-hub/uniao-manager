@@ -18,6 +18,7 @@ const EventDetail = () => {
   const saveAbsences = useSaveScheduledAbsences();
   const updateEvent = useUpdateEvent();
   const logoRef = useRef<HTMLInputElement>(null);
+  const [showFlyer, setShowFlyer] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
