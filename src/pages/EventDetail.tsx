@@ -449,7 +449,7 @@ const EventDetail = () => {
             </div>
 
             {/* Sticky footer with confirm */}
-            <div className="px-4 py-4 border-t border-border bg-card sticky bottom-0 space-y-2">
+            <div className="px-4 py-4 border-t border-border bg-card shrink-0 space-y-2">
               {!canConfirm && (
                 <p className="text-[10px] text-destructive text-center font-medium">
                   {totalConvocados < MIN_CONVOCADOS
