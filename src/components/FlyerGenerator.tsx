@@ -86,12 +86,12 @@ const FlyerGenerator = ({
     if (!ctx) return;
 
     // ============ BACKGROUND ============
-    // Deep blue gradient
-    const bg = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H * 0.4, 100, CANVAS_W / 2, CANVAS_H * 0.4, CANVAS_H);
-    bg.addColorStop(0, "#0f2557");
-    bg.addColorStop(0.4, "#0a1a40");
-    bg.addColorStop(0.8, "#060e24");
-    bg.addColorStop(1, "#030812");
+    // Deep royal blue gradient matching team logo
+    const bg = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H * 0.35, 100, CANVAS_W / 2, CANVAS_H * 0.35, CANVAS_H);
+    bg.addColorStop(0, "#1a3f8f");
+    bg.addColorStop(0.35, "#122e6e");
+    bg.addColorStop(0.65, "#0c2050");
+    bg.addColorStop(1, "#071535");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
