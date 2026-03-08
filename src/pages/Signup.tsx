@@ -61,8 +61,9 @@ const Signup = () => {
         _cpf: cpfDigits,
         _phone: phoneDigits,
       });
-      if (check?.duplicate) {
-        const fieldName = check.field === "cpf" ? "CPF" : "Telefone";
+      const result = check as any;
+      if (result?.duplicate) {
+        const fieldName = result.field === "cpf" ? "CPF" : "Telefone";
         toast({ title: `${fieldName} já cadastrado`, description: `Já existe uma conta com este ${fieldName}`, variant: "destructive" });
         setLoading(false);
         return;
