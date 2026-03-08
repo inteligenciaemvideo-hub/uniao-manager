@@ -506,22 +506,52 @@ export type Database = {
       }
       team_sponsors: {
         Row: {
+          active: boolean | null
+          amount: number | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
+          divulgation_date: string | null
           id: string
+          item_description: string | null
           logo_url: string | null
           name: string
+          notes: string | null
+          payment_date: string | null
+          payment_type: string | null
         }
         Insert: {
+          active?: boolean | null
+          amount?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
+          divulgation_date?: string | null
           id?: string
+          item_description?: string | null
           logo_url?: string | null
           name: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_type?: string | null
         }
         Update: {
+          active?: boolean | null
+          amount?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
+          divulgation_date?: string | null
           id?: string
+          item_description?: string | null
           logo_url?: string | null
           name?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_type?: string | null
         }
         Relationships: []
       }
