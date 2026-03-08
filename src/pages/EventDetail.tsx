@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle, Instagram } from "lucide-react";
-import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto, useEventGuests, useSaveEventGuests } from "@/hooks/useSupabase";
+import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle, Instagram, Trophy, Target, Handshake, Minus } from "lucide-react";
+import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto, useEventGuests, useSaveEventGuests, useMatchEvents, useSaveMatchEvents, useRecalculatePlayerStats } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import FlyerGenerator from "@/components/FlyerGenerator";
 import ConvocationCard from "@/components/ConvocationCard";
@@ -21,13 +21,17 @@ const EventDetail = () => {
   const { data: absences = [] } = useScheduledAbsences(id);
   const { data: teamSettings } = useTeamSettings();
   const { data: guests = [] } = useEventGuests(id);
+  const { data: matchEvents = [] } = useMatchEvents(id);
   const saveConvocations = useSaveConvocations();
   const saveAbsences = useSaveScheduledAbsences();
   const saveGuests = useSaveEventGuests();
   const updateEvent = useUpdateEvent();
+  const saveMatchEvents = useSaveMatchEvents();
+  const recalcStats = useRecalculatePlayerStats();
   const logoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
+  const [showPostMatch, setShowPostMatch] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
@@ -38,6 +42,24 @@ const EventDetail = () => {
   const [guestNicknames, setGuestNicknames] = useState<string[]>([]);
   const [newGuestName, setNewGuestName] = useState("");
   const [convocationConfirmed, setConvocationConfirmed] = useState(convoked.length > 0);
+
+  // Post-match state
+  const [homeScore, setHomeScore] = useState<number>(event?.home_score ?? 0);
+  const [awayScore, setAwayScore] = useState<number>(event?.away_score ?? 0);
+  const [goalEntries, setGoalEntries] = useState<{ player_id: string; type: string }[]>([]);
+
+  useEffect(() => {
+    if (event) {
+      setHomeScore(event.home_score ?? 0);
+      setAwayScore(event.away_score ?? 0);
+    }
+  }, [event?.id, event?.home_score, event?.away_score]);
+
+  useEffect(() => {
+    if (matchEvents.length > 0) {
+      setGoalEntries(matchEvents.map((e: any) => ({ player_id: e.player_id, type: e.type })));
+    }
+  }, [matchEvents]);
 
   if (!event) {
     return <div className="px-4 py-10 text-center text-muted-foreground">Evento não encontrado</div>;
@@ -262,6 +284,14 @@ const EventDetail = () => {
             <div className="flex items-center gap-3 text-muted-foreground"><CalendarCheck size={14} /><span>{new Date(event.date).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span></div>
             <div className="flex items-center gap-3 text-muted-foreground"><Clock size={14} /><span>{event.time}</span></div>
             <div className="flex items-center gap-3 text-muted-foreground"><MapPin size={14} /><span>{event.location}</span></div>
+            {event.home_score !== null && event.away_score !== null && (
+              <div className="flex items-center gap-3 mt-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                <Trophy size={14} className="text-primary" />
+                <span className="text-sm font-bold text-foreground">
+                  Distrito União {event.home_score} × {event.away_score} {event.opponent || "Adversário"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -368,6 +398,16 @@ const EventDetail = () => {
               <Instagram size={16} />Card Instagram
             </button>
           </div>
+        )}
+
+        {/* Post-match button */}
+        {event.type === "Jogo" && convocationConfirmed && convoked.length > 0 && (
+          <button
+            onClick={() => setShowPostMatch(true)}
+            className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2"
+          >
+            <Trophy size={16} />Pós-Jogo (Resultado & Stats)
+          </button>
         )}
       </div>
 
@@ -548,6 +588,119 @@ const EventDetail = () => {
         players={convokedPlayers.map(p => ({ name: p.name, nickname: p.nickname, number: p.number, positions: p.positions || [] }))}
         guests={guests.map((g: any) => ({ nickname: g.nickname }))}
       />
+
+      {/* Post-Match Modal */}
+      {showPostMatch && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col justify-end">
+          <div className="w-full bg-card rounded-t-2xl flex flex-col" style={{ maxHeight: "85vh" }}>
+            <div className="px-4 py-4 border-b border-border flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-bold flex items-center gap-2"><Trophy size={16} className="text-primary" /> Pós-Jogo</h3>
+              <button onClick={() => setShowPostMatch(false)} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><X size={16} /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-6">
+              {/* Score */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Placar</h4>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground mb-1">Distrito União</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setHomeScore(Math.max(0, homeScore - 1))} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Minus size={14} /></button>
+                      <span className="text-2xl font-bold w-10 text-center">{homeScore}</span>
+                      <button onClick={() => setHomeScore(homeScore + 1)} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Plus size={14} /></button>
+                    </div>
+                  </div>
+                  <span className="text-lg font-bold text-muted-foreground">×</span>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground mb-1">{event.opponent || "Adversário"}</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setAwayScore(Math.max(0, awayScore - 1))} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Minus size={14} /></button>
+                      <span className="text-2xl font-bold w-10 text-center">{awayScore}</span>
+                      <button onClick={() => setAwayScore(awayScore + 1)} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Plus size={14} /></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Goal & Assist entries */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                  <Target size={14} className="text-primary" /> Gols & Assistências
+                </h4>
+                <div className="space-y-2 mb-3">
+                  {goalEntries.map((entry, i) => {
+                    const player = convokedPlayers.find(p => p.id === entry.player_id);
+                    return (
+                      <div key={i} className="flex items-center gap-2 py-2 px-3 rounded-lg bg-secondary/50">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.type === "goal" ? "bg-primary/20 text-primary" : "bg-accent/20 text-accent-foreground"}`}>
+                          {entry.type === "goal" ? "⚽ Gol" : "👟 Assist."}
+                        </span>
+                        <span className="text-sm flex-1">{player?.name || "?"}</span>
+                        <button onClick={() => setGoalEntries(prev => prev.filter((_, idx) => idx !== i))} className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center">
+                          <X size={12} className="text-destructive" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <p className="text-[10px] text-muted-foreground mb-2">Toque no atleta para adicionar gol ou assistência:</p>
+                {convokedPlayers.map(player => {
+                  const playerGoals = goalEntries.filter(e => e.player_id === player.id && e.type === "goal").length;
+                  const playerAssists = goalEntries.filter(e => e.player_id === player.id && e.type === "assist").length;
+                  return (
+                    <div key={player.id} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
+                      <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{player.name}</p>
+                        <p className="text-[10px] text-muted-foreground">#{player.number}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "goal" }])}
+                          className="h-7 px-2 rounded-lg bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 border border-primary/30"
+                        >
+                          <Target size={10} /> Gol {playerGoals > 0 && `(${playerGoals})`}
+                        </button>
+                        <button
+                          onClick={() => setGoalEntries(prev => [...prev, { player_id: player.id, type: "assist" }])}
+                          className="h-7 px-2 rounded-lg bg-accent/10 text-accent-foreground text-[10px] font-bold flex items-center gap-1 border border-accent/30"
+                        >
+                          <Handshake size={10} /> Assist. {playerAssists > 0 && `(${playerAssists})`}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-4 border-t border-border bg-card shrink-0 space-y-3">
+              <button
+                onClick={async () => {
+                  try {
+                    await updateEvent.mutateAsync({ id: event.id, home_score: homeScore, away_score: awayScore });
+                    await saveMatchEvents.mutateAsync({ eventId: event.id, events: goalEntries });
+                    await recalcStats.mutateAsync();
+                    setShowPostMatch(false);
+                    toast.success("Resultado e estatísticas salvos!");
+                  } catch {
+                    toast.error("Erro ao salvar resultado");
+                  }
+                }}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <Check size={16} /> Salvar Resultado
+              </button>
+              <button onClick={() => setShowPostMatch(false)} className="w-full py-2.5 text-muted-foreground text-sm font-medium">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
