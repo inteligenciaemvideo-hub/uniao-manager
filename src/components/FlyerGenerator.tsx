@@ -9,7 +9,6 @@ interface FlyerGeneratorProps {
   date: string;
   time: string;
   location: string;
-  teamLogoUrl?: string | null;
   opponentLogoUrl?: string | null;
   homeScore?: number | null;
   awayScore?: number | null;
@@ -21,33 +20,35 @@ type MatchSide = "home" | "away";
 const CANVAS_W = 1080;
 const CANVAS_H = 1350;
 
-// Team colors
+const TEAM_LOGO_PATH = "/images/distrito-uniao-logo.png";
+
+// Team palette
+const BLUE_DARK = "#0c1a3a";
 const BLUE = "#1e3a8a";
 const BLUE_LIGHT = "#2563eb";
+const BLUE_GLOW = "#3b82f6";
 const YELLOW = "#eab308";
+const YELLOW_LIGHT = "#facc15";
+const GOLD = "#d4a017";
 const WHITE = "#ffffff";
-const DARK_BG = "#0a0e1a";
 
 const FlyerGenerator = ({
   open, onClose, eventType, opponent, date, time, location,
-  teamLogoUrl, opponentLogoUrl, homeScore, awayScore,
+  opponentLogoUrl, homeScore, awayScore,
 }: FlyerGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mode, setMode] = useState<FlyerMode>("proximo_jogo");
   const [side, setSide] = useState<MatchSide>("home");
-  const [teamLogoFile, setTeamLogoFile] = useState<string | null>(null);
   const [opponentLogoFile, setOpponentLogoFile] = useState<string | null>(null);
   const [localHomeScore, setLocalHomeScore] = useState(homeScore ?? 0);
   const [localAwayScore, setLocalAwayScore] = useState(awayScore ?? 0);
-  const teamLogoInputRef = useRef<HTMLInputElement>(null);
   const oppLogoInputRef = useRef<HTMLInputElement>(null);
 
-  const teamLogo = teamLogoFile || teamLogoUrl || null;
   const oppLogo = opponentLogoFile || opponentLogoUrl || null;
 
-  const handleFileUpload = (setter: (url: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setter(URL.createObjectURL(file));
+    if (file) setOpponentLogoFile(URL.createObjectURL(file));
   };
 
   const loadImage = (src: string): Promise<HTMLImageElement> =>
@@ -59,33 +60,23 @@ const FlyerGenerator = ({
       img.src = src;
     });
 
-  // Remove white/light background from logo
-  const removeBackground = (img: HTMLImageElement, size: number): HTMLCanvasElement => {
-    const offscreen = document.createElement("canvas");
-    offscreen.width = size;
-    offscreen.height = size;
-    const octx = offscreen.getContext("2d")!;
-
-    const aspect = img.width / img.height;
+  const removeWhiteBg = (img: HTMLImageElement, size: number): HTMLCanvasElement => {
+    const c = document.createElement("canvas");
+    c.width = size; c.height = size;
+    const cx = c.getContext("2d")!;
+    const asp = img.width / img.height;
     let dw = size, dh = size;
-    if (aspect > 1) { dh = size / aspect; } else { dw = size * aspect; }
-    const dx = (size - dw) / 2;
-    const dy = (size - dh) / 2;
-    octx.drawImage(img, dx, dy, dw, dh);
-
-    const imageData = octx.getImageData(0, 0, size, size);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      // Remove white/near-white and light gray pixels
-      if (r > 220 && g > 220 && b > 220) {
-        data[i + 3] = 0; // fully transparent
-      } else if (r > 200 && g > 200 && b > 200) {
-        data[i + 3] = Math.max(0, data[i + 3] - 180); // semi-transparent
-      }
+    if (asp > 1) dh = size / asp; else dw = size * asp;
+    cx.drawImage(img, (size - dw) / 2, (size - dh) / 2, dw, dh);
+    const id = cx.getImageData(0, 0, size, size);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i+1], b = d[i+2];
+      if (r > 230 && g > 230 && b > 230) d[i+3] = 0;
+      else if (r > 210 && g > 210 && b > 210) d[i+3] = Math.max(0, d[i+3] - 200);
     }
-    octx.putImageData(imageData, 0, 0);
-    return offscreen;
+    cx.putImageData(id, 0, 0);
+    return c;
   };
 
   const drawFlyer = useCallback(async () => {
@@ -94,243 +85,254 @@ const FlyerGenerator = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // === BACKGROUND ===
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-    bgGrad.addColorStop(0, "#060b18");
-    bgGrad.addColorStop(0.4, "#0c1529");
-    bgGrad.addColorStop(0.7, "#0a1225");
-    bgGrad.addColorStop(1, "#050810");
-    ctx.fillStyle = bgGrad;
+    // ============ BACKGROUND ============
+    // Deep blue gradient
+    const bg = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H * 0.4, 100, CANVAS_W / 2, CANVAS_H * 0.4, CANVAS_H);
+    bg.addColorStop(0, "#0f2557");
+    bg.addColorStop(0.4, "#0a1a40");
+    bg.addColorStop(0.8, "#060e24");
+    bg.addColorStop(1, "#030812");
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Subtle diagonal pattern
+    // Radial glow top center (blue)
     ctx.save();
-    ctx.globalAlpha = 0.03;
-    for (let i = -CANVAS_H; i < CANVAS_W + CANVAS_H; i += 40) {
-      ctx.strokeStyle = WHITE;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + CANVAS_H, CANVAS_H);
-      ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    const topGlow = ctx.createRadialGradient(CANVAS_W / 2, 0, 50, CANVAS_W / 2, 0, 600);
+    topGlow.addColorStop(0, BLUE_GLOW);
+    topGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = topGlow;
+    ctx.fillRect(0, 0, CANVAS_W, 700);
+    ctx.restore();
+
+    // Radial glow bottom (gold)
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    const btmGlow = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H, 50, CANVAS_W / 2, CANVAS_H, 500);
+    btmGlow.addColorStop(0, YELLOW);
+    btmGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = btmGlow;
+    ctx.fillRect(0, CANVAS_H - 500, CANVAS_W, 500);
+    ctx.restore();
+
+    // Subtle noise/texture lines
+    ctx.save();
+    ctx.globalAlpha = 0.015;
+    for (let i = 0; i < CANVAS_H; i += 3) {
+      ctx.fillStyle = WHITE;
+      ctx.fillRect(0, i, CANVAS_W, 1);
     }
     ctx.restore();
 
-    // === TOP BORDER - gradient stripe ===
-    const topBorder = ctx.createLinearGradient(0, 0, CANVAS_W, 0);
-    topBorder.addColorStop(0, BLUE);
-    topBorder.addColorStop(0.5, YELLOW);
-    topBorder.addColorStop(1, BLUE);
-    ctx.fillStyle = topBorder;
-    ctx.fillRect(0, 0, CANVAS_W, 8);
+    // ============ BORDERS ============
+    // Top gold border
+    const topBar = ctx.createLinearGradient(0, 0, CANVAS_W, 0);
+    topBar.addColorStop(0, "transparent");
+    topBar.addColorStop(0.15, GOLD);
+    topBar.addColorStop(0.5, YELLOW_LIGHT);
+    topBar.addColorStop(0.85, GOLD);
+    topBar.addColorStop(1, "transparent");
+    ctx.fillStyle = topBar;
+    ctx.fillRect(0, 0, CANVAS_W, 6);
 
-    // === LEFT/RIGHT accent bars ===
-    const sideGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-    sideGrad.addColorStop(0, YELLOW);
-    sideGrad.addColorStop(0.3, BLUE_LIGHT);
-    sideGrad.addColorStop(0.7, BLUE_LIGHT);
-    sideGrad.addColorStop(1, YELLOW);
-    ctx.fillStyle = sideGrad;
-    ctx.fillRect(0, 8, 5, CANVAS_H - 16);
-    ctx.fillRect(CANVAS_W - 5, 8, 5, CANVAS_H - 16);
+    // Bottom gold border
+    ctx.fillStyle = topBar;
+    ctx.fillRect(0, CANVAS_H - 6, CANVAS_W, 6);
 
-    // === BOTTOM BORDER ===
-    const botBorder = ctx.createLinearGradient(0, 0, CANVAS_W, 0);
-    botBorder.addColorStop(0, BLUE);
-    botBorder.addColorStop(0.5, YELLOW);
-    botBorder.addColorStop(1, BLUE);
-    ctx.fillStyle = botBorder;
-    ctx.fillRect(0, CANVAS_H - 8, CANVAS_W, 8);
+    // Side thin accent lines
+    const sideBar = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+    sideBar.addColorStop(0, "transparent");
+    sideBar.addColorStop(0.2, GOLD + "60");
+    sideBar.addColorStop(0.5, YELLOW_LIGHT + "90");
+    sideBar.addColorStop(0.8, GOLD + "60");
+    sideBar.addColorStop(1, "transparent");
+    ctx.fillStyle = sideBar;
+    ctx.fillRect(0, 0, 3, CANVAS_H);
+    ctx.fillRect(CANVAS_W - 3, 0, 3, CANVAS_H);
 
-    // === DECORATIVE GLOW behind logos ===
-    const glowY = 520;
-    ctx.save();
-    ctx.globalAlpha = 0.08;
-    const glowRad = ctx.createRadialGradient(CANVAS_W / 2, glowY, 50, CANVAS_W / 2, glowY, 500);
-    glowRad.addColorStop(0, BLUE_LIGHT);
-    glowRad.addColorStop(1, "transparent");
-    ctx.fillStyle = glowRad;
-    ctx.fillRect(0, 200, CANVAS_W, 700);
-    ctx.restore();
+    // Corner ornaments
+    drawCornerOrnament(ctx, 15, 15, 80, "tl");
+    drawCornerOrnament(ctx, CANVAS_W - 15, 15, 80, "tr");
+    drawCornerOrnament(ctx, 15, CANVAS_H - 15, 80, "bl");
+    drawCornerOrnament(ctx, CANVAS_W - 15, CANVAS_H - 15, 80, "br");
 
-    // === EVENT TYPE BADGE ===
+    // ============ HEADER ============
+    // Event type badge
     const badgeText = eventType.toUpperCase();
-    ctx.font = "bold 32px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "700 28px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    const badgeW = ctx.measureText(badgeText).width + 80;
-    const badgeX = (CANVAS_W - badgeW) / 2;
+    const bw = ctx.measureText(badgeText).width + 70;
+    const bx = (CANVAS_W - bw) / 2;
 
     ctx.save();
-    const badgeGrad = ctx.createLinearGradient(badgeX, 50, badgeX + badgeW, 50);
-    badgeGrad.addColorStop(0, BLUE);
-    badgeGrad.addColorStop(1, BLUE_LIGHT);
-    ctx.fillStyle = badgeGrad;
-    roundRect(ctx, badgeX, 50, badgeW, 52, 26);
+    ctx.fillStyle = BLUE;
+    roundRect(ctx, bx, 40, bw, 46, 23);
     ctx.fill();
-    // Yellow accent line under badge
-    ctx.fillStyle = YELLOW;
-    ctx.fillRect(badgeX + 20, 102, badgeW - 40, 3);
-    ctx.fillStyle = WHITE;
-    ctx.font = "bold 30px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(badgeText, CANVAS_W / 2, 84);
+    ctx.strokeStyle = GOLD + "80";
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, bx, 40, bw, 46, 23);
+    ctx.stroke();
+    ctx.fillStyle = YELLOW_LIGHT;
+    ctx.font = "700 24px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(badgeText, CANVAS_W / 2, 70);
     ctx.restore();
 
-    // === MATCH INFO LINE ===
-    const formattedDate = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-    const matchSideText = side === "home" ? "🏠 EM CASA" : "✈️ FORA";
-    ctx.fillStyle = YELLOW;
-    ctx.font = "700 24px 'Segoe UI', Arial, sans-serif";
+    // Home/Away indicator
+    const sideLabel = side === "home" ? "MANDANTE" : "VISITANTE";
+    ctx.fillStyle = side === "home" ? YELLOW : "#94a3b8";
+    ctx.font = "600 20px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(matchSideText, CANVAS_W / 2, 145);
+    ctx.fillText(`⚽  ${sideLabel}`, CANVAS_W / 2, 120);
+
+    // Date & time line
+    const formattedDate = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
+      weekday: "long", day: "2-digit", month: "long", year: "numeric"
+    });
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "500 22px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(formattedDate.toUpperCase(), CANVAS_W / 2, 160);
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "600 24px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(`${formattedDate.toUpperCase()} • ${time}H`, CANVAS_W / 2, 185);
+    ctx.font = "500 20px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(`${time}H  •  ${location.toUpperCase()}`, CANVAS_W / 2, 192);
 
-    ctx.fillStyle = "#64748b";
-    ctx.font = "500 22px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(`📍 ${location.toUpperCase()}`, CANVAS_W / 2, 220);
+    // Separator
+    drawGoldSeparator(ctx, 220);
 
-    // === DIVIDER LINE ===
-    const divGrad = ctx.createLinearGradient(200, 0, CANVAS_W - 200, 0);
-    divGrad.addColorStop(0, "transparent");
-    divGrad.addColorStop(0.3, YELLOW + "44");
-    divGrad.addColorStop(0.5, YELLOW);
-    divGrad.addColorStop(0.7, YELLOW + "44");
-    divGrad.addColorStop(1, "transparent");
-    ctx.fillStyle = divGrad;
-    ctx.fillRect(200, 250, CANVAS_W - 400, 2);
+    // ============ LOGOS SECTION ============
+    const logoSize = 320;
+    const logoY = 280;
+    const leftCx = CANVAS_W / 2 - 230;
+    const rightCx = CANVAS_W / 2 + 230;
+    const ourCx = side === "home" ? leftCx : rightCx;
+    const oppCx = side === "home" ? rightCx : leftCx;
 
-    // === LOGOS SECTION ===
-    const logoSize = 300;
-    const logoY = 340;
-    // If home: our team on left, opponent on right
-    // If away: opponent on left, our team on right
-    const leftCx = CANVAS_W / 2 - 220;
-    const rightCx = CANVAS_W / 2 + 220;
+    // Glow behind each logo
+    drawLogoGlow(ctx, ourCx, logoY + logoSize / 2, logoSize * 0.55, BLUE_GLOW);
+    drawLogoGlow(ctx, oppCx, logoY + logoSize / 2, logoSize * 0.45, "#64748b");
 
-    const ourLogoCx = side === "home" ? leftCx : rightCx;
-    const oppLogoCx = side === "home" ? rightCx : leftCx;
-
-    // Draw logo glow circles
-    drawLogoGlow(ctx, ourLogoCx, logoY + logoSize / 2, logoSize / 2, BLUE_LIGHT);
-    drawLogoGlow(ctx, oppLogoCx, logoY + logoSize / 2, logoSize / 2, "#475569");
-
-    // Draw team logos
-    if (teamLogo) {
-      try {
-        const img = await loadImage(teamLogo);
-        const cleaned = removeBackground(img, logoSize);
-        ctx.drawImage(cleaned, ourLogoCx - logoSize / 2, logoY, logoSize, logoSize);
-      } catch {
-        drawModernPlaceholder(ctx, ourLogoCx, logoY + logoSize / 2, logoSize, "SEU TIME", BLUE_LIGHT);
-      }
-    } else {
-      drawModernPlaceholder(ctx, ourLogoCx, logoY + logoSize / 2, logoSize, "SEU TIME", BLUE_LIGHT);
+    // Our team logo (always the fixed one)
+    try {
+      const teamImg = await loadImage(TEAM_LOGO_PATH);
+      drawFitImage(ctx, teamImg, ourCx, logoY, logoSize);
+    } catch {
+      drawModernPlaceholder(ctx, ourCx, logoY + logoSize / 2, logoSize, "DISTRITO\nUNIÃO", BLUE_GLOW);
     }
 
+    // Opponent logo
     if (oppLogo) {
       try {
         const img = await loadImage(oppLogo);
-        const cleaned = removeBackground(img, logoSize);
-        ctx.drawImage(cleaned, oppLogoCx - logoSize / 2, logoY, logoSize, logoSize);
+        const cleaned = removeWhiteBg(img, logoSize);
+        ctx.drawImage(cleaned, oppCx - logoSize / 2, logoY, logoSize, logoSize);
       } catch {
-        drawModernPlaceholder(ctx, oppLogoCx, logoY + logoSize / 2, logoSize, "ADVERSÁRIO", "#475569");
+        drawModernPlaceholder(ctx, oppCx, logoY + logoSize / 2, logoSize, "ADVERSÁRIO", "#64748b");
       }
     } else {
-      drawModernPlaceholder(ctx, oppLogoCx, logoY + logoSize / 2, logoSize, "ADVERSÁRIO", "#475569");
+      drawModernPlaceholder(ctx, oppCx, logoY + logoSize / 2, logoSize, "ADVERSÁRIO", "#64748b");
     }
 
-    // === VS / SCORE ===
+    // ============ VS / SCORE ============
     const vsY = logoY + logoSize / 2;
+
     if (mode === "resultado") {
-      // Score display
       const leftScore = side === "home" ? localHomeScore : localAwayScore;
       const rightScore = side === "home" ? localAwayScore : localHomeScore;
 
-      ctx.fillStyle = WHITE;
-      ctx.font = "900 100px 'Segoe UI', Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`${leftScore}`, CANVAS_W / 2 - 60, vsY + 35);
-      ctx.fillStyle = YELLOW;
-      ctx.font = "900 50px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("×", CANVAS_W / 2, vsY + 25);
-      ctx.fillStyle = WHITE;
-      ctx.font = "900 100px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(`${rightScore}`, CANVAS_W / 2 + 60, vsY + 35);
-    } else {
-      // VS badge
+      // Score glow
       ctx.save();
-      ctx.fillStyle = YELLOW;
-      ctx.beginPath();
-      ctx.arc(CANVAS_W / 2, vsY, 40, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = DARK_BG;
-      ctx.font = "900 32px 'Segoe UI', Arial, sans-serif";
+      ctx.shadowColor = YELLOW;
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = WHITE;
+      ctx.font = "900 110px 'Segoe UI', Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("VS", CANVAS_W / 2, vsY + 12);
+      ctx.fillText(`${leftScore}`, CANVAS_W / 2 - 55, vsY + 38);
+      ctx.fillText(`${rightScore}`, CANVAS_W / 2 + 55, vsY + 38);
+      ctx.restore();
+
+      ctx.fillStyle = YELLOW;
+      ctx.font = "900 55px 'Segoe UI', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("×", CANVAS_W / 2, vsY + 22);
+    } else {
+      // VS circle
+      ctx.save();
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(CANVAS_W / 2, vsY, 48, 0, Math.PI * 2);
+      ctx.fillStyle = BLUE;
+      ctx.fill();
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Inner fill
+      ctx.beginPath();
+      ctx.arc(CANVAS_W / 2, vsY, 38, 0, Math.PI * 2);
+      const vsGrad = ctx.createLinearGradient(CANVAS_W / 2 - 38, vsY - 38, CANVAS_W / 2 + 38, vsY + 38);
+      vsGrad.addColorStop(0, YELLOW);
+      vsGrad.addColorStop(1, GOLD);
+      ctx.fillStyle = vsGrad;
+      ctx.fill();
+
+      ctx.fillStyle = BLUE_DARK;
+      ctx.font = "900 30px 'Segoe UI', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("VS", CANVAS_W / 2, vsY + 11);
       ctx.restore();
     }
 
-    // === TEAM NAMES UNDER LOGOS ===
-    ctx.font = "700 26px 'Segoe UI', Arial, sans-serif";
+    // ============ TEAM NAMES ============
+    const nameY = logoY + logoSize + 35;
+    ctx.font = "800 28px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    
-    const ourTeamName = "DISTRITO UNIÃO";
-    const oppTeamName = opponent ? opponent.toUpperCase() : "ADVERSÁRIO";
+    ctx.fillStyle = YELLOW_LIGHT;
+    ctx.fillText("DISTRITO UNIÃO FC", ourCx, nameY);
 
-    ctx.fillStyle = WHITE;
-    ctx.fillText(ourTeamName, ourLogoCx, logoY + logoSize + 40);
-    ctx.fillStyle = "#94a3b8";
-    ctx.fillText(oppTeamName, oppLogoCx, logoY + logoSize + 40);
+    ctx.fillStyle = "#e2e8f0";
+    const oppName = opponent ? opponent.toUpperCase() : "ADVERSÁRIO";
+    ctx.fillText(oppName, oppCx, nameY);
 
-    // === MAIN TITLE BLOCK ===
-    const titleY = logoY + logoSize + 130;
+    // ============ SEPARATOR ============
+    drawGoldSeparator(ctx, nameY + 35);
 
-    // Decorative line above title
-    const tLineGrad = ctx.createLinearGradient(300, 0, CANVAS_W - 300, 0);
-    tLineGrad.addColorStop(0, "transparent");
-    tLineGrad.addColorStop(0.5, YELLOW);
-    tLineGrad.addColorStop(1, "transparent");
-    ctx.fillStyle = tLineGrad;
-    ctx.fillRect(300, titleY - 30, CANVAS_W - 600, 2);
-
+    // ============ MAIN TITLE ============
+    const titleY = nameY + 100;
     const mainTitle = mode === "proximo_jogo" ? "PRÓXIMO" : "RESULTADO";
     const subTitle = mode === "proximo_jogo" ? "JOGO" : "FINAL";
 
-    // Title shadow/glow
+    // Main title with glow
     ctx.save();
-    ctx.shadowColor = BLUE_LIGHT;
-    ctx.shadowBlur = 30;
+    ctx.shadowColor = BLUE_GLOW;
+    ctx.shadowBlur = 40;
     ctx.fillStyle = WHITE;
-    ctx.font = "900 110px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "900 105px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(mainTitle, CANVAS_W / 2, titleY + 50);
+    ctx.fillText(mainTitle, CANVAS_W / 2, titleY);
     ctx.restore();
 
-    // Subtitle with yellow accent
-    ctx.fillStyle = YELLOW;
+    // Sub title in gold
+    ctx.save();
+    ctx.shadowColor = YELLOW + "80";
+    ctx.shadowBlur = 25;
+    const titleGrad = ctx.createLinearGradient(CANVAS_W / 2 - 200, titleY, CANVAS_W / 2 + 200, titleY + 120);
+    titleGrad.addColorStop(0, YELLOW_LIGHT);
+    titleGrad.addColorStop(0.5, YELLOW);
+    titleGrad.addColorStop(1, GOLD);
+    ctx.fillStyle = titleGrad;
     ctx.font = "900 130px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(subTitle, CANVAS_W / 2, titleY + 125);
+    ctx.restore();
+
+    // ============ FOOTER ============
+    drawGoldSeparator(ctx, CANVAS_H - 80);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "500 18px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(subTitle, CANVAS_W / 2, titleY + 175);
+    ctx.fillText("DISTRITO UNIÃO FC  •  FUTEBOL AMADOR", CANVAS_W / 2, CANVAS_H - 40);
 
-    // Decorative line below title
-    ctx.fillStyle = tLineGrad;
-    ctx.fillRect(300, titleY + 200, CANVAS_W - 600, 2);
-
-    // === FOOTER ===
-    ctx.fillStyle = "#334155";
-    ctx.font = "500 20px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("DISTRITO UNIÃO FUTEBOL", CANVAS_W / 2, CANVAS_H - 50);
-
-    // Corner decorations
-    drawCorner(ctx, 20, 20, 60, "tl");
-    drawCorner(ctx, CANVAS_W - 20, 20, 60, "tr");
-    drawCorner(ctx, 20, CANVAS_H - 20, 60, "bl");
-    drawCorner(ctx, CANVAS_W - 20, CANVAS_H - 20, 60, "br");
-
-  }, [mode, side, teamLogo, oppLogo, eventType, date, time, location, opponent, localHomeScore, localAwayScore]);
+  }, [mode, side, oppLogo, eventType, date, time, location, opponent, localHomeScore, localAwayScore]);
 
   useEffect(() => {
     if (open) drawFlyer();
@@ -383,7 +385,9 @@ const FlyerGenerator = ({
             <button
               onClick={() => setSide("home")}
               className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                side === "home" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40" : "bg-secondary text-muted-foreground"
+                side === "home"
+                  ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40"
+                  : "bg-secondary text-muted-foreground"
               }`}
             >
               <Home size={16} /> Em Casa
@@ -391,63 +395,45 @@ const FlyerGenerator = ({
             <button
               onClick={() => setSide("away")}
               className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                side === "away" ? "bg-blue-500/20 text-blue-400 border border-blue-500/40" : "bg-secondary text-muted-foreground"
+                side === "away"
+                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                  : "bg-secondary text-muted-foreground"
               }`}
             >
               <Plane size={16} /> Fora
             </button>
           </div>
 
-          {/* Logo uploads */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Logo do seu time</label>
-              <button
-                onClick={() => teamLogoInputRef.current?.click()}
-                className="w-full h-20 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center gap-2 overflow-hidden hover:border-primary/40 transition-colors"
-              >
-                {teamLogo ? (
-                  <img src={teamLogo} alt="Logo time" className="h-16 w-16 object-contain" />
-                ) : (
-                  <><ImageIcon size={16} className="text-muted-foreground" /><span className="text-xs text-muted-foreground">Anexar</span></>
-                )}
-              </button>
-              <input ref={teamLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setTeamLogoFile)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Logo do adversário</label>
-              <button
-                onClick={() => oppLogoInputRef.current?.click()}
-                className="w-full h-20 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center gap-2 overflow-hidden hover:border-primary/40 transition-colors"
-              >
-                {oppLogo ? (
-                  <img src={oppLogo} alt="Logo adversário" className="h-16 w-16 object-contain" />
-                ) : (
-                  <><ImageIcon size={16} className="text-muted-foreground" /><span className="text-xs text-muted-foreground">Anexar</span></>
-                )}
-              </button>
-              <input ref={oppLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setOpponentLogoFile)} />
-            </div>
+          {/* Opponent logo upload only */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Logo do adversário</label>
+            <button
+              onClick={() => oppLogoInputRef.current?.click()}
+              className="w-full h-20 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center gap-2 overflow-hidden hover:border-primary/40 transition-colors"
+            >
+              {oppLogo ? (
+                <img src={oppLogo} alt="Logo adversário" className="h-16 w-16 object-contain" />
+              ) : (
+                <><ImageIcon size={16} className="text-muted-foreground" /><span className="text-xs text-muted-foreground">Anexar logo do adversário</span></>
+              )}
+            </button>
+            <input ref={oppLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
           </div>
 
-          {/* Score inputs for resultado mode */}
+          {/* Score inputs */}
           {mode === "resultado" && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Placar - Seu time</label>
-                <input
-                  type="number" min={0} value={localHomeScore}
+                <label className="text-xs text-muted-foreground mb-1 block">Placar - Distrito União</label>
+                <input type="number" min={0} value={localHomeScore}
                   onChange={(e) => setLocalHomeScore(Number(e.target.value))}
-                  className="w-full h-10 rounded-lg bg-secondary/30 border border-border px-3 text-center text-lg font-bold"
-                />
+                  className="w-full h-10 rounded-lg bg-secondary/30 border border-border px-3 text-center text-lg font-bold" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Placar - Adversário</label>
-                <input
-                  type="number" min={0} value={localAwayScore}
+                <input type="number" min={0} value={localAwayScore}
                   onChange={(e) => setLocalAwayScore(Number(e.target.value))}
-                  className="w-full h-10 rounded-lg bg-secondary/30 border border-border px-3 text-center text-lg font-bold"
-                />
+                  className="w-full h-10 rounded-lg bg-secondary/30 border border-border px-3 text-center text-lg font-bold" />
               </div>
             </div>
           )}
@@ -460,7 +446,7 @@ const FlyerGenerator = ({
           {/* Actions */}
           <div className="flex gap-3">
             <button onClick={drawFlyer} className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm">
-              Atualizar Preview
+              Atualizar
             </button>
             <button onClick={handleDownload} className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
               <Download size={16} /> Baixar Flyer
@@ -472,52 +458,45 @@ const FlyerGenerator = ({
   );
 };
 
-// Helper: rounded rectangle
+// ============ HELPERS ============
+
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
 }
 
-// Helper: logo glow effect
+function drawFitImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: number, y: number, size: number) {
+  const asp = img.width / img.height;
+  let dw = size, dh = size;
+  if (asp > 1) dh = size / asp; else dw = size * asp;
+  ctx.drawImage(img, cx - dw / 2, y + (size - dh) / 2, dw, dh);
+}
+
 function drawLogoGlow(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
   ctx.save();
-  ctx.globalAlpha = 0.06;
-  const glow = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r * 1.2);
-  glow.addColorStop(0, color);
-  glow.addColorStop(1, "transparent");
-  ctx.fillStyle = glow;
-  ctx.fillRect(cx - r * 1.2, cy - r * 1.2, r * 2.4, r * 2.4);
-  ctx.restore();
-
-  // Subtle ring
-  ctx.save();
-  ctx.globalAlpha = 0.1;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.12;
+  const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+  g.addColorStop(0, color);
+  g.addColorStop(1, "transparent");
+  ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.75, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
-// Helper: modern placeholder
 function drawModernPlaceholder(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, label: string, color: string) {
-  const r = size / 2 * 0.6;
+  const r = size * 0.3;
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fillStyle = color + "15";
+  ctx.fillStyle = color + "12";
   ctx.fill();
-  ctx.strokeStyle = color + "40";
+  ctx.strokeStyle = color + "30";
   ctx.lineWidth = 2;
   ctx.setLineDash([8, 6]);
   ctx.stroke();
@@ -525,24 +504,52 @@ function drawModernPlaceholder(ctx: CanvasRenderingContext2D, cx: number, cy: nu
   ctx.fillStyle = "#64748b";
   ctx.font = "600 18px 'Segoe UI', Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(label, cx, cy + 6);
+  const lines = label.split("\n");
+  lines.forEach((line, i) => {
+    ctx.fillText(line, cx, cy + 6 + (i - (lines.length - 1) / 2) * 24);
+  });
   ctx.restore();
 }
 
-// Helper: corner decorations
-function drawCorner(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pos: "tl" | "tr" | "bl" | "br") {
+function drawGoldSeparator(ctx: CanvasRenderingContext2D, y: number) {
+  const g = ctx.createLinearGradient(150, 0, CANVAS_W - 150, 0);
+  g.addColorStop(0, "transparent");
+  g.addColorStop(0.2, "#d4a01740");
+  g.addColorStop(0.5, "#facc15");
+  g.addColorStop(0.8, "#d4a01740");
+  g.addColorStop(1, "transparent");
+  ctx.fillStyle = g;
+  ctx.fillRect(150, y, CANVAS_W - 300, 2);
+
+  // Small diamond in the center
   ctx.save();
-  ctx.strokeStyle = YELLOW + "50";
+  ctx.fillStyle = "#facc15";
+  ctx.translate(CANVAS_W / 2, y + 1);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillRect(-4, -4, 8, 8);
+  ctx.restore();
+}
+
+function drawCornerOrnament(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pos: "tl" | "tr" | "bl" | "br") {
+  ctx.save();
+  ctx.strokeStyle = "#d4a01750";
   ctx.lineWidth = 2;
+
+  const s = size;
   ctx.beginPath();
   if (pos === "tl") {
-    ctx.moveTo(x, y + size); ctx.lineTo(x, y); ctx.lineTo(x + size, y);
+    ctx.moveTo(x, y + s); ctx.lineTo(x, y); ctx.lineTo(x + s, y);
+    // Inner corner accent
+    ctx.moveTo(x + 8, y + s * 0.6); ctx.lineTo(x + 8, y + 8); ctx.lineTo(x + s * 0.6, y + 8);
   } else if (pos === "tr") {
-    ctx.moveTo(x - size, y); ctx.lineTo(x, y); ctx.lineTo(x, y + size);
+    ctx.moveTo(x - s, y); ctx.lineTo(x, y); ctx.lineTo(x, y + s);
+    ctx.moveTo(x - s * 0.6, y + 8); ctx.lineTo(x - 8, y + 8); ctx.lineTo(x - 8, y + s * 0.6);
   } else if (pos === "bl") {
-    ctx.moveTo(x, y - size); ctx.lineTo(x, y); ctx.lineTo(x + size, y);
+    ctx.moveTo(x, y - s); ctx.lineTo(x, y); ctx.lineTo(x + s, y);
+    ctx.moveTo(x + 8, y - s * 0.6); ctx.lineTo(x + 8, y - 8); ctx.lineTo(x + s * 0.6, y - 8);
   } else {
-    ctx.moveTo(x - size, y); ctx.lineTo(x, y); ctx.lineTo(x, y - size);
+    ctx.moveTo(x - s, y); ctx.lineTo(x, y); ctx.lineTo(x, y - s);
+    ctx.moveTo(x - s * 0.6, y - 8); ctx.lineTo(x - 8, y - 8); ctx.lineTo(x - 8, y - s * 0.6);
   }
   ctx.stroke();
   ctx.restore();
