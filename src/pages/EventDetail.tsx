@@ -406,14 +406,24 @@ const EventDetail = () => {
           </div>
         )}
 
-        {/* Post-match button */}
-        {event.type === "Jogo" && convocationConfirmed && convoked.length > 0 && (
-          <button
-            onClick={() => setShowPostMatch(true)}
-            className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2"
-          >
-            <Trophy size={16} />Pós-Jogo (Resultado & Stats)
-          </button>
+        {/* Post-match button - for Jogo, Amistoso, Torneio */}
+        {(event.type === "Jogo" || event.type === "Amistoso" || event.type === "Torneio") && convocationConfirmed && convoked.length > 0 && (
+          <>
+            <button
+              onClick={() => setShowPostMatch(true)}
+              className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2"
+            >
+              <Trophy size={16} />Pós-Jogo (Resultado & Stats)
+            </button>
+            {event.home_score !== null && event.away_score !== null && (
+              <button
+                onClick={() => setShowResultFlyer(true)}
+                className="w-full py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"
+              >
+                <Instagram size={16} />Flyer de Resultado
+              </button>
+            )}
+          </>
         )}
       </div>
 
