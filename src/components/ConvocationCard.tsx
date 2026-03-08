@@ -155,15 +155,15 @@ const ConvocationCard = ({
     drawThinSeparator(ctx, 380);
 
     // ============ PLAYER LIST (two columns) ============
-    const allNames: { name: string; number: string; isGuest: boolean }[] = [];
-    players.forEach(p => allNames.push({ name: p.nickname || p.name, number: `#${p.number}`, isGuest: false }));
-    guests.forEach(g => allNames.push({ name: g.nickname, number: "★", isGuest: true }));
+    const allNames: { name: string; number: string; position: string; isGuest: boolean }[] = [];
+    players.forEach(p => allNames.push({ name: p.nickname || p.name, number: `#${p.number}`, position: (p.positions || []).join(", "), isGuest: false }));
+    guests.forEach(g => allNames.push({ name: g.nickname, number: "★", position: "Convidado", isGuest: true }));
 
     const startY = 420;
     const colWidth = (INNER_W - 80) / 2;
     const leftX = INNER_X + 50;
     const rightX = CANVAS_W / 2 + 20;
-    const rowH = 52;
+    const rowH = 62;
     const halfLen = Math.ceil(allNames.length / 2);
 
     allNames.forEach((item, i) => {
@@ -176,7 +176,7 @@ const ConvocationCard = ({
       ctx.save();
       ctx.globalAlpha = i % 2 === 0 ? 0.04 : 0;
       ctx.fillStyle = WHITE;
-      roundRect(ctx, x - 10, y - 14, colWidth, 42, 6);
+      roundRect(ctx, x - 10, y - 14, colWidth, 52, 6);
       ctx.fill();
       ctx.restore();
 
@@ -185,7 +185,7 @@ const ConvocationCard = ({
       ctx.font = "700 16px 'Segoe UI', Arial, sans-serif";
       ctx.textAlign = "center";
       ctx.fillStyle = item.isGuest ? "#eab308" : BLUE_GLOW;
-      ctx.fillText(item.number, x + 16, y + 12);
+      ctx.fillText(item.number, x + 16, y + 8);
       ctx.restore();
 
       // Name
@@ -194,17 +194,17 @@ const ConvocationCard = ({
       ctx.textAlign = "left";
       ctx.fillStyle = item.isGuest ? "#eab308" : WHITE;
       const displayName = item.name.length > 16 ? item.name.substring(0, 15) + "…" : item.name;
-      ctx.fillText(displayName.toUpperCase(), x + 40, y + 12);
+      ctx.fillText(displayName.toUpperCase(), x + 40, y + 8);
       ctx.restore();
 
-      if (item.isGuest) {
-        ctx.save();
-        ctx.font = "500 12px 'Segoe UI', Arial, sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillStyle = "#eab30880";
-        ctx.fillText("CONVIDADO", x + 40, y + 28);
-        ctx.restore();
-      }
+      // Position
+      ctx.save();
+      ctx.font = "500 14px 'Segoe UI', Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillStyle = item.isGuest ? "#eab30880" : WHITE_DIM;
+      const posText = item.position.length > 22 ? item.position.substring(0, 21) + "…" : item.position;
+      ctx.fillText(posText, x + 40, y + 28);
+      ctx.restore();
     });
 
     // ============ FOOTER ============
