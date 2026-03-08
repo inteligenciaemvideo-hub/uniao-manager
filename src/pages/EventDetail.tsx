@@ -709,10 +709,17 @@ const EventDetail = () => {
                 <div className="space-y-2 mb-3">
                   {goalEntries.map((entry, i) => {
                     const player = convokedPlayers.find(p => p.id === entry.player_id);
+                    const typeLabels: Record<string, { label: string; cls: string }> = {
+                      goal: { label: "⚽ Gol", cls: "bg-primary/20 text-primary" },
+                      assist: { label: "👟 Assist.", cls: "bg-accent/20 text-accent-foreground" },
+                      yellow_card: { label: "🟨 Amarelo", cls: "bg-yellow-500/20 text-yellow-400" },
+                      red_card: { label: "🟥 Vermelho", cls: "bg-destructive/20 text-destructive" },
+                    };
+                    const t = typeLabels[entry.type] || typeLabels.goal;
                     return (
                       <div key={i} className="flex items-center gap-2 py-2 px-3 rounded-lg bg-secondary/50">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.type === "goal" ? "bg-primary/20 text-primary" : "bg-accent/20 text-accent-foreground"}`}>
-                          {entry.type === "goal" ? "⚽ Gol" : "👟 Assist."}
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.cls}`}>
+                          {t.label}
                         </span>
                         <span className="text-sm flex-1">{player?.name || "?"}</span>
                         <button onClick={() => setGoalEntries(prev => prev.filter((_, idx) => idx !== i))} className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center">
