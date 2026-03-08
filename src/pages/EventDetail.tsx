@@ -35,6 +35,7 @@ const EventDetail = () => {
   const [selectedSponsorIds, setSelectedSponsorIds] = useState<string[]>([]);
   const [showSponsorSelector, setShowSponsorSelector] = useState(false);
   const [updatingLogoSponsorId, setUpdatingLogoSponsorId] = useState<string | null>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
   const [showPostMatch, setShowPostMatch] = useState(false);
