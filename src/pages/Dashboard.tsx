@@ -157,6 +157,21 @@ const Dashboard = () => {
           <span className="text-[10px] font-medium text-muted-foreground">Novo Atleta</span>
         </button>
       </div>
+
+      {flyerEvent && (
+        <FlyerGenerator
+          open={flyerOpen}
+          onClose={() => setFlyerOpen(false)}
+          eventType={flyerEvent.type}
+          opponent={flyerEvent.opponent || ""}
+          date={flyerEvent.date}
+          time={flyerEvent.time}
+          location={flyerEvent.location}
+          opponentLogoUrl={flyerEvent.opponent_logo_url}
+          homeScore={flyerEvent.home_score}
+          awayScore={flyerEvent.away_score}
+        />
+      )}
     </div>
   );
 };
