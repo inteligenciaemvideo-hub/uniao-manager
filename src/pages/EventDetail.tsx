@@ -760,7 +760,7 @@ const EventDetail = () => {
             const player = convokedPlayers.find(p => p.id === e.player_id);
             return { player_id: e.player_id, player_name: player?.name || "?", type: e.type };
           })}
-          sponsors={sponsors}
+          sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
         />
       )}
     </div>
