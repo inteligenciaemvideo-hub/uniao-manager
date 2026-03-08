@@ -591,7 +591,7 @@ const EventDetail = () => {
           opponentLogoUrl={event.opponent_logo_url}
           homeScore={(event as any).home_score}
           awayScore={(event as any).away_score}
-          sponsors={sponsors}
+          sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
         />
       )}
 
