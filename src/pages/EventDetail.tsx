@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon } from "lucide-react";
 import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import FlyerGenerator from "@/components/FlyerGenerator";
 import jsPDF from "jspdf";
 
 const EventDetail = () => {
@@ -17,6 +18,7 @@ const EventDetail = () => {
   const saveAbsences = useSaveScheduledAbsences();
   const updateEvent = useUpdateEvent();
   const logoRef = useRef<HTMLInputElement>(null);
+  const [showFlyer, setShowFlyer] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
@@ -182,6 +184,9 @@ const EventDetail = () => {
       {/* Actions */}
       <div className="px-4 space-y-3">
         <button onClick={() => navigate(`/compromissos/${event.id}`)} className="w-full py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm flex items-center justify-center gap-2"><CalendarCheck size={16} />Fazer Chamada</button>
+        {event.opponent && (
+          <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2"><ImageIcon size={16} />Gerar Flyer</button>
+        )}
         <button onClick={exportPDF} className="w-full py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"><FileDown size={16} />Exportar Relação em PDF</button>
       </div>
 
@@ -218,37 +223,21 @@ const EventDetail = () => {
         </div>
       )}
 
-      {/* Absence Selector Modal */}
-      {showAbsenceSelector && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
-          <div className="w-full bg-card rounded-t-2xl max-h-[80vh] flex flex-col">
-            <div className="px-4 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="text-sm font-bold">Programar Ausências</h3>
-              <span className="text-xs text-muted-foreground">{selectedAbsences.length} ausentes</span>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
-              {activePlayers.map(player => {
-                const isAbsent = selectedAbsences.includes(player.id);
-                return (
-                  <button key={player.id} onClick={() => toggleAbsence(player.id)} className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors ${isAbsent ? "bg-destructive/10 border border-destructive/30" : "hover:bg-secondary/50"}`}>
-                    <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-medium truncate">{player.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{(player.positions || []).join(", ")} · #{player.number}</p>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isAbsent ? "bg-destructive border-destructive" : "border-muted-foreground"}`}>
-                      {isAbsent && <Ban size={12} className="text-white" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="px-4 py-4 border-t border-border flex gap-3">
-              <button onClick={() => setShowAbsenceSelector(false)} className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm">Cancelar</button>
-              <button onClick={handleSaveAbsences} className="flex-1 py-3 rounded-xl bg-destructive text-destructive-foreground font-semibold text-sm">Confirmar ({selectedAbsences.length})</button>
-            </div>
-          </div>
-        </div>
+      {/* Flyer Generator */}
+      {event.opponent && (
+        <FlyerGenerator
+          open={showFlyer}
+          onClose={() => setShowFlyer(false)}
+          eventType={event.type}
+          opponent={event.opponent}
+          date={event.date}
+          time={event.time}
+          location={event.location}
+          teamLogoUrl={teamSettings?.team_logo_url}
+          opponentLogoUrl={event.opponent_logo_url}
+          homeScore={(event as any).home_score}
+          awayScore={(event as any).away_score}
+        />
       )}
     </div>
   );
