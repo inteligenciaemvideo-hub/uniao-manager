@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon } from "lucide-react";
 import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import FlyerGenerator from "@/components/FlyerGenerator";
 import jsPDF from "jspdf";
 
 const EventDetail = () => {
