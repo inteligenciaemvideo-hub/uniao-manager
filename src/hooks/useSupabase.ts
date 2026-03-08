@@ -422,8 +422,8 @@ export const useSponsors = () =>
 export const useAddSponsor = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (sponsor: Record<string, any>) => {
-      const { data, error } = await supabase.from("team_sponsors").insert(sponsor).select().single();
+    mutationFn: async (sponsor: { name: string; logo_url?: string | null; [key: string]: any }) => {
+      const { data, error } = await supabase.from("team_sponsors").insert(sponsor as any).select().single();
       if (error) throw error;
       return data;
     },
