@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Users, DollarSign, CalendarCheck, BarChart3, Camera, LogOut, Shield } from "lucide-react";
+import { Home, Users, DollarSign, CalendarCheck, BarChart3, Settings, LogOut, Shield } from "lucide-react";
 import { useRef } from "react";
 import { useTeamSettings, useUpdateTeamSettings, uploadPhoto } from "@/hooks/useSupabase";
 import { useAuth, useUserRole, signOut } from "@/hooks/useAuth";
