@@ -606,7 +606,7 @@ const EventDetail = () => {
         location={event.location}
         players={convokedPlayers.map(p => ({ name: p.name, nickname: p.nickname, number: p.number, positions: p.positions || [] }))}
         guests={guests.map((g: any) => ({ nickname: g.nickname }))}
-        sponsors={sponsors}
+        sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
       />
 
       {/* Post-Match Modal */}
