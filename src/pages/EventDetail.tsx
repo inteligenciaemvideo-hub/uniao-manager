@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle, Instagram } from "lucide-react";
 import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto, useEventGuests, useSaveEventGuests } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import FlyerGenerator from "@/components/FlyerGenerator";
+import ConvocationCard from "@/components/ConvocationCard";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -26,6 +27,7 @@ const EventDetail = () => {
   const updateEvent = useUpdateEvent();
   const logoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
+  const [showConvocationCard, setShowConvocationCard] = useState(false);
 
   const activePlayers = players.filter(p => p.status === "Ativo");
 
@@ -45,7 +47,6 @@ const EventDetail = () => {
     setSelected(prev => {
       const isSelected = prev.includes(playerId);
       if (isSelected) return prev.filter(id => id !== playerId);
-      // Check max (players + guests)
       if (prev.length + guestNicknames.length >= MAX_CONVOCADOS) {
         toast.error(`Máximo de ${MAX_CONVOCADOS} convocados atingido`);
         return prev;
@@ -115,47 +116,120 @@ const EventDetail = () => {
     setShowSelector(true);
   };
 
+  // ============ PROFESSIONAL PDF EXPORT ============
   const exportPDF = () => {
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFontSize(18);
+    const pw = doc.internal.pageSize.getWidth();
+    const BLUE = [13, 27, 62]; // #0d1b3e
+    const BLUE_HEADER = [26, 58, 122]; // #1a3a7a
+    const WHITE_RGB = [255, 255, 255];
+    const GRAY = [136, 153, 187];
+
+    // Header band
+    doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
+    doc.rect(0, 0, pw, 45, "F");
+
+    // Title
+    doc.setTextColor(WHITE_RGB[0], WHITE_RGB[1], WHITE_RGB[2]);
     doc.setFont("helvetica", "bold");
-    doc.text("DISTRITO UNIÃO", pageWidth / 2, 20, { align: "center" });
-    doc.setFontSize(12);
+    doc.setFontSize(20);
+    doc.text("DISTRITO UNIÃO FC", pw / 2, 18, { align: "center" });
+
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text(`Relação de Jogo - ${event.type}`, pageWidth / 2, 28, { align: "center" });
-    let y = 40;
-    if (event.opponent) { doc.setFont("helvetica", "bold"); doc.text(`vs. ${event.opponent}`, pageWidth / 2, y, { align: "center" }); y += 8; }
-    doc.setFont("helvetica", "normal");
-    doc.text(`Data: ${new Date(event.date).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`, 20, y); y += 7;
-    doc.text(`Horário: ${event.time}`, 20, y); y += 7;
-    doc.text(`Local: ${event.location}`, 20, y); y += 12;
-    doc.line(20, y, pageWidth - 20, y); y += 8;
-    doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text(`Convocados (${convokedPlayers.length + guests.length})`, 20, y); y += 8;
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    if (convokedPlayers.length === 0 && guests.length === 0) { doc.text("Nenhum atleta convocado", 20, y); y += 7; }
-    else {
-      doc.setFont("helvetica", "bold"); doc.text("#", 20, y); doc.text("Nome", 35, y); doc.text("Posição", 110, y); y += 2;
-      doc.line(20, y, pageWidth - 20, y); y += 5; doc.setFont("helvetica", "normal");
-      convokedPlayers.forEach(player => {
-        if (y > 270) { doc.addPage(); y = 20; }
-        doc.text(`${player.number}`, 20, y); doc.text(player.name, 35, y); doc.text((player.positions || []).join(", "), 110, y); y += 7;
-      });
-      guests.forEach((g: any) => {
-        if (y > 270) { doc.addPage(); y = 20; }
-        doc.text("-", 20, y); doc.text(`${g.nickname} (Convidado)`, 35, y); y += 7;
-      });
+    doc.text("RELATÓRIO DE CONVOCAÇÃO", pw / 2, 28, { align: "center" });
+
+    if (event.opponent) {
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text(`VS ${event.opponent.toUpperCase()}`, pw / 2, 40, { align: "center" });
     }
+
+    // Event info
+    let y = 58;
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const formattedDate = new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    doc.text(`📅  ${formattedDate}`, 20, y); y += 7;
+    doc.text(`⏰  ${event.time}`, 20, y); y += 7;
+    doc.text(`📍  ${event.location}`, 20, y); y += 12;
+
+    // Table header
+    doc.setFillColor(BLUE_HEADER[0], BLUE_HEADER[1], BLUE_HEADER[2]);
+    doc.rect(15, y, pw - 30, 10, "F");
+    doc.setTextColor(WHITE_RGB[0], WHITE_RGB[1], WHITE_RGB[2]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("#", 20, y + 7);
+    doc.text("NOME DO ATLETA", 35, y + 7);
+    doc.text("POSIÇÃO", 120, y + 7);
+    doc.text("Nº", pw - 25, y + 7, { align: "center" });
+    y += 14;
+
+    // Table rows
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    convokedPlayers.forEach((player, i) => {
+      if (y > 272) { doc.addPage(); y = 20; }
+      // Alternate row bg
+      if (i % 2 === 0) {
+        doc.setFillColor(240, 243, 250);
+        doc.rect(15, y - 4, pw - 30, 9, "F");
+      }
+      doc.setTextColor(30, 30, 30);
+      doc.text(`${i + 1}`, 20, y + 2);
+      doc.text(player.name, 35, y + 2);
+      doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+      doc.text((player.positions || []).join(", "), 120, y + 2);
+      doc.setTextColor(30, 30, 30);
+      doc.text(`${player.number}`, pw - 25, y + 2, { align: "center" });
+      y += 9;
+    });
+
+    // Guests
+    guests.forEach((g: any, i: number) => {
+      if (y > 272) { doc.addPage(); y = 20; }
+      if ((convokedPlayers.length + i) % 2 === 0) {
+        doc.setFillColor(255, 249, 235);
+        doc.rect(15, y - 4, pw - 30, 9, "F");
+      }
+      doc.setTextColor(180, 140, 20);
+      doc.text("★", 20, y + 2);
+      doc.text(`${g.nickname} (Convidado)`, 35, y + 2);
+      y += 9;
+    });
+
+    // Absences
     if (absentPlayers.length > 0) {
-      y += 8; doc.setFontSize(13); doc.setFont("helvetica", "bold");
-      doc.text(`Ausências Programadas (${absentPlayers.length})`, 20, y); y += 8;
-      doc.setFontSize(10); doc.setFont("helvetica", "normal");
-      absentPlayers.forEach(player => { if (y > 270) { doc.addPage(); y = 20; } doc.text(`${player.number} - ${player.name}`, 20, y); y += 7; });
+      y += 8;
+      doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
+      doc.rect(15, y, pw - 30, 10, "F");
+      doc.setTextColor(WHITE_RGB[0], WHITE_RGB[1], WHITE_RGB[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(`AUSÊNCIAS PROGRAMADAS (${absentPlayers.length})`, 20, y + 7);
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      absentPlayers.forEach((player, i) => {
+        if (y > 272) { doc.addPage(); y = 20; }
+        if (i % 2 === 0) {
+          doc.setFillColor(255, 240, 240);
+          doc.rect(15, y - 4, pw - 30, 9, "F");
+        }
+        doc.setTextColor(180, 60, 60);
+        doc.text(`${player.number} - ${player.name}`, 20, y + 2);
+        y += 9;
+      });
     }
-    doc.setFontSize(8); doc.setTextColor(150);
-    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, pageWidth / 2, 290, { align: "center" });
-    doc.save(`relacao-${event.type.toLowerCase()}-${event.date}.pdf`);
+
+    // Footer
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}  •  Distrito União FC`, pw / 2, 290, { align: "center" });
+
+    doc.save(`escalacao_distrito_uniao_${event.date}.pdf`);
   };
 
   return (
@@ -271,10 +345,30 @@ const EventDetail = () => {
         >
           <CalendarCheck size={16} />Fazer Chamada
         </button>
+
         {event.opponent && (
-          <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2"><ImageIcon size={16} />Gerar Flyer</button>
+          <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
+            <ImageIcon size={16} />Gerar Flyer do Jogo
+          </button>
         )}
-        <button onClick={exportPDF} className="w-full py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"><FileDown size={16} />Exportar Relação em PDF</button>
+
+        {/* PDF & Instagram buttons - only after convocation confirmed */}
+        {convocationConfirmed && (convoked.length > 0 || guests.length > 0) && (
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={exportPDF}
+              className="py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"
+            >
+              <FileDown size={16} />Lista PDF
+            </button>
+            <button
+              onClick={() => setShowConvocationCard(true)}
+              className="py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center gap-2 border border-primary/30"
+            >
+              <Instagram size={16} />Card Instagram
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Player Selector Modal */}
@@ -293,7 +387,6 @@ const EventDetail = () => {
               </div>
             </div>
 
-            {/* Min/Max info */}
             <div className="px-4 py-2 bg-secondary/30 border-b border-border">
               <p className="text-[10px] text-muted-foreground">
                 Mínimo <span className="font-bold text-foreground">{MIN_CONVOCADOS}</span> e máximo <span className="font-bold text-foreground">{MAX_CONVOCADOS}</span> atletas (incluindo convidados)
@@ -355,7 +448,8 @@ const EventDetail = () => {
               </div>
             </div>
 
-            <div className="px-4 py-4 border-t border-border space-y-2">
+            {/* Sticky footer with confirm */}
+            <div className="px-4 py-4 border-t border-border bg-card sticky bottom-0 space-y-2">
               {!canConfirm && (
                 <p className="text-[10px] text-destructive text-center font-medium">
                   {totalConvocados < MIN_CONVOCADOS
@@ -368,9 +462,10 @@ const EventDetail = () => {
                 <button
                   onClick={handleSaveConvocation}
                   disabled={!canConfirm || saveConvocations.isPending}
-                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-40"
+                  className="flex-1 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
                 >
-                  {saveConvocations.isPending ? "Salvando..." : `Confirmar (${totalConvocados})`}
+                  <Check size={16} />
+                  {saveConvocations.isPending ? "Salvando..." : `Confirmar Escalação (${totalConvocados})`}
                 </button>
               </div>
             </div>
@@ -426,6 +521,19 @@ const EventDetail = () => {
           awayScore={(event as any).away_score}
         />
       )}
+
+      {/* Convocation Instagram Card */}
+      <ConvocationCard
+        open={showConvocationCard}
+        onClose={() => setShowConvocationCard(false)}
+        eventType={event.type}
+        opponent={event.opponent || ""}
+        date={event.date}
+        time={event.time}
+        location={event.location}
+        players={convokedPlayers.map(p => ({ name: p.name, nickname: p.nickname, number: p.number, positions: p.positions || [] }))}
+        guests={guests.map((g: any) => ({ nickname: g.nickname }))}
+      />
     </div>
   );
 };
