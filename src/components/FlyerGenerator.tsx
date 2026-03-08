@@ -22,15 +22,16 @@ const CANVAS_H = 1350;
 
 const TEAM_LOGO_PATH = "/images/distrito-uniao-logo.png";
 
-// Team palette
-const BLUE_DARK = "#0c1a3a";
-const BLUE = "#1e3a8a";
-const BLUE_LIGHT = "#2563eb";
-const BLUE_GLOW = "#3b82f6";
+// Professional dark palette
+const BG_BLACK = "#050a12";
+const BORDER_BLUE = "#0d1b3e";
+const BLUE_ACCENT = "#1a3a7a";
+const BLUE_GLOW = "#2563eb";
+const WHITE = "#ffffff";
+const WHITE_DIM = "#8899bb";
+const GOLD = "#d4a017";
 const YELLOW = "#eab308";
 const YELLOW_LIGHT = "#facc15";
-const GOLD = "#d4a017";
-const WHITE = "#ffffff";
 
 const FlyerGenerator = ({
   open, onClose, eventType, opponent, date, time, location,
@@ -60,7 +61,7 @@ const FlyerGenerator = ({
       img.src = src;
     });
 
-  const removeWhiteBg = (img: HTMLImageElement, size: number): HTMLCanvasElement => {
+  const removeBackground = (img: HTMLImageElement, size: number): HTMLCanvasElement => {
     const c = document.createElement("canvas");
     c.width = size; c.height = size;
     const cx = c.getContext("2d")!;
@@ -71,9 +72,13 @@ const FlyerGenerator = ({
     const id = cx.getImageData(0, 0, size, size);
     const d = id.data;
     for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i+1], b = d[i+2];
-      if (r > 230 && g > 230 && b > 230) d[i+3] = 0;
-      else if (r > 210 && g > 210 && b > 210) d[i+3] = Math.max(0, d[i+3] - 200);
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      // Remove white/near-white backgrounds
+      if (r > 225 && g > 225 && b > 225) d[i + 3] = 0;
+      else if (r > 200 && g > 200 && b > 200) d[i + 3] = Math.max(0, d[i + 3] - 180);
+      // Remove pure black backgrounds
+      if (r < 25 && g < 25 && b < 25) d[i + 3] = 0;
+      else if (r < 45 && g < 45 && b < 45) d[i + 3] = Math.max(0, d[i + 3] - 150);
     }
     cx.putImageData(id, 0, 0);
     return c;
@@ -85,252 +90,244 @@ const FlyerGenerator = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // ============ BACKGROUND ============
-    // Deep royal blue gradient matching team logo
-    const bg = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H * 0.35, 100, CANVAS_W / 2, CANVAS_H * 0.35, CANVAS_H);
-    bg.addColorStop(0, "#1a3f8f");
-    bg.addColorStop(0.35, "#122e6e");
-    bg.addColorStop(0.65, "#0c2050");
-    bg.addColorStop(1, "#071535");
-    ctx.fillStyle = bg;
+    const BORDER = 28;
+    const INNER_X = BORDER;
+    const INNER_Y = BORDER;
+    const INNER_W = CANVAS_W - BORDER * 2;
+    const INNER_H = CANVAS_H - BORDER * 2;
+
+    // ============ OUTER BORDER (dark blue) ============
+    ctx.fillStyle = BORDER_BLUE;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Radial glow top center (blue)
+    // ============ INNER BLACK PANEL ============
+    const innerBg = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H * 0.4, 80, CANVAS_W / 2, CANVAS_H * 0.4, CANVAS_H * 0.8);
+    innerBg.addColorStop(0, "#0e1525");
+    innerBg.addColorStop(0.5, "#080f1e");
+    innerBg.addColorStop(1, BG_BLACK);
+    ctx.fillStyle = innerBg;
+    roundRect(ctx, INNER_X, INNER_Y, INNER_W, INNER_H, 4);
+    ctx.fill();
+
+    // Subtle center blue radial glow
     ctx.save();
-    ctx.globalAlpha = 0.15;
-    const topGlow = ctx.createRadialGradient(CANVAS_W / 2, 0, 50, CANVAS_W / 2, 0, 600);
-    topGlow.addColorStop(0, BLUE_GLOW);
-    topGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = topGlow;
-    ctx.fillRect(0, 0, CANVAS_W, 700);
+    ctx.globalAlpha = 0.08;
+    const cGlow = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H * 0.38, 50, CANVAS_W / 2, CANVAS_H * 0.38, 500);
+    cGlow.addColorStop(0, BLUE_GLOW);
+    cGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = cGlow;
+    ctx.fillRect(INNER_X, INNER_Y, INNER_W, INNER_H);
     ctx.restore();
 
-    // Radial glow bottom (gold)
+    // Very subtle noise texture
     ctx.save();
-    ctx.globalAlpha = 0.07;
-    const btmGlow = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H, 50, CANVAS_W / 2, CANVAS_H, 500);
-    btmGlow.addColorStop(0, YELLOW);
-    btmGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = btmGlow;
-    ctx.fillRect(0, CANVAS_H - 500, CANVAS_W, 500);
-    ctx.restore();
-
-    // Subtle noise/texture lines
-    ctx.save();
-    ctx.globalAlpha = 0.015;
-    for (let i = 0; i < CANVAS_H; i += 3) {
+    ctx.globalAlpha = 0.012;
+    for (let i = INNER_Y; i < INNER_Y + INNER_H; i += 4) {
       ctx.fillStyle = WHITE;
-      ctx.fillRect(0, i, CANVAS_W, 1);
+      ctx.fillRect(INNER_X, i, INNER_W, 1);
     }
     ctx.restore();
 
-    // ============ BORDERS ============
-    // Top gold border
-    const topBar = ctx.createLinearGradient(0, 0, CANVAS_W, 0);
-    topBar.addColorStop(0, "transparent");
-    topBar.addColorStop(0.15, GOLD);
-    topBar.addColorStop(0.5, YELLOW_LIGHT);
-    topBar.addColorStop(0.85, GOLD);
-    topBar.addColorStop(1, "transparent");
-    ctx.fillStyle = topBar;
-    ctx.fillRect(0, 0, CANVAS_W, 6);
-
-    // Bottom gold border
-    ctx.fillStyle = topBar;
-    ctx.fillRect(0, CANVAS_H - 6, CANVAS_W, 6);
-
-    // Side thin accent lines
-    const sideBar = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-    sideBar.addColorStop(0, "transparent");
-    sideBar.addColorStop(0.2, GOLD + "60");
-    sideBar.addColorStop(0.5, YELLOW_LIGHT + "90");
-    sideBar.addColorStop(0.8, GOLD + "60");
-    sideBar.addColorStop(1, "transparent");
-    ctx.fillStyle = sideBar;
-    ctx.fillRect(0, 0, 3, CANVAS_H);
-    ctx.fillRect(CANVAS_W - 3, 0, 3, CANVAS_H);
-
-    // Corner ornaments
-    drawCornerOrnament(ctx, 15, 15, 80, "tl");
-    drawCornerOrnament(ctx, CANVAS_W - 15, 15, 80, "tr");
-    drawCornerOrnament(ctx, 15, CANVAS_H - 15, 80, "bl");
-    drawCornerOrnament(ctx, CANVAS_W - 15, CANVAS_H - 15, 80, "br");
-
-    // ============ HEADER ============
-    // Event type badge
-    const badgeText = eventType.toUpperCase();
-    ctx.font = "700 28px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    const bw = ctx.measureText(badgeText).width + 70;
-    const bx = (CANVAS_W - bw) / 2;
-
+    // Inner border accent line (thin blue)
     ctx.save();
-    ctx.fillStyle = BLUE;
-    roundRect(ctx, bx, 40, bw, 46, 23);
-    ctx.fill();
-    ctx.strokeStyle = GOLD + "80";
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, bx, 40, bw, 46, 23);
+    ctx.strokeStyle = BLUE_ACCENT + "50";
+    ctx.lineWidth = 1;
+    roundRect(ctx, INNER_X + 1, INNER_Y + 1, INNER_W - 2, INNER_H - 2, 3);
     ctx.stroke();
-    ctx.fillStyle = YELLOW_LIGHT;
-    ctx.font = "700 24px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(badgeText, CANVAS_W / 2, 70);
     ctx.restore();
 
-    // Home/Away indicator
-    const sideLabel = side === "home" ? "MANDANTE" : "VISITANTE";
-    ctx.fillStyle = side === "home" ? YELLOW : "#94a3b8";
-    ctx.font = "600 20px 'Segoe UI', Arial, sans-serif";
+    // ============ HEADER ============
+    const headerY = 90;
+
+    // Event type (e.g. "AMISTOSO")
+    const badgeText = eventType.toUpperCase();
+    ctx.save();
+    ctx.font = "800 42px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`⚽  ${sideLabel}`, CANVAS_W / 2, 120);
+    ctx.fillStyle = WHITE;
+    ctx.letterSpacing = "6px";
+    ctx.fillText(badgeText, CANVAS_W / 2, headerY);
+    ctx.restore();
 
-    // Date & time line
-    const formattedDate = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
-      weekday: "long", day: "2-digit", month: "long", year: "numeric"
-    });
-    ctx.fillStyle = "#cbd5e1";
-    ctx.font = "500 22px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(formattedDate.toUpperCase(), CANVAS_W / 2, 160);
+    // Date / Location / Time line
+    const dateStr = date ? new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "--/--";
+    const infoLine = `${dateStr} / ${location.toUpperCase()} / ${time}H`;
+    ctx.save();
+    ctx.font = "600 22px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = BLUE_GLOW;
+    ctx.fillText(infoLine, CANVAS_W / 2, headerY + 45);
+    ctx.restore();
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "500 20px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(`${time}H  •  ${location.toUpperCase()}`, CANVAS_W / 2, 192);
+    // Home/Away small indicator
+    const sideLabel = side === "home" ? "🏠 MANDANTE" : "✈️ VISITANTE";
+    ctx.save();
+    ctx.font = "500 18px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = WHITE_DIM;
+    ctx.fillText(sideLabel, CANVAS_W / 2, headerY + 80);
+    ctx.restore();
 
-    // Separator
-    drawGoldSeparator(ctx, 220);
+    // Thin separator
+    drawThinSeparator(ctx, headerY + 105);
 
     // ============ LOGOS SECTION ============
-    const logoSize = 320;
-    const logoY = 280;
-    const leftCx = CANVAS_W / 2 - 230;
-    const rightCx = CANVAS_W / 2 + 230;
+    const logoSize = 300;
+    const logoCenterY = 420;
+    const leftCx = CANVAS_W / 2 - 240;
+    const rightCx = CANVAS_W / 2 + 240;
     const ourCx = side === "home" ? leftCx : rightCx;
     const oppCx = side === "home" ? rightCx : leftCx;
 
-    // Glow behind each logo
-    drawLogoGlow(ctx, ourCx, logoY + logoSize / 2, logoSize * 0.55, BLUE_GLOW);
-    drawLogoGlow(ctx, oppCx, logoY + logoSize / 2, logoSize * 0.45, "#64748b");
+    // Outer glow behind logos (cohesion effect)
+    drawLogoGlow(ctx, ourCx, logoCenterY, logoSize * 0.6, BLUE_GLOW, 0.12);
+    drawLogoGlow(ctx, oppCx, logoCenterY, logoSize * 0.5, BLUE_ACCENT, 0.08);
 
-    // Our team logo (always the fixed one)
+    // Our team logo
     try {
       const teamImg = await loadImage(TEAM_LOGO_PATH);
-      drawFitImage(ctx, teamImg, ourCx, logoY, logoSize);
+      drawLogoWithShadow(ctx, teamImg, ourCx, logoCenterY, logoSize);
     } catch {
-      drawModernPlaceholder(ctx, ourCx, logoY + logoSize / 2, logoSize, "DISTRITO\nUNIÃO", BLUE_GLOW);
+      drawPlaceholderLogo(ctx, ourCx, logoCenterY, logoSize, "DISTRITO\nUNIÃO", BLUE_GLOW);
     }
 
     // Opponent logo
     if (oppLogo) {
       try {
         const img = await loadImage(oppLogo);
-        const cleaned = removeWhiteBg(img, logoSize);
-        ctx.drawImage(cleaned, oppCx - logoSize / 2, logoY, logoSize, logoSize);
+        const cleaned = removeBackground(img, logoSize);
+        ctx.save();
+        ctx.shadowColor = "#000000";
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 8;
+        ctx.drawImage(cleaned, oppCx - logoSize / 2, logoCenterY - logoSize / 2, logoSize, logoSize);
+        ctx.restore();
       } catch {
-        drawModernPlaceholder(ctx, oppCx, logoY + logoSize / 2, logoSize, "ADVERSÁRIO", "#64748b");
+        drawPlaceholderLogo(ctx, oppCx, logoCenterY, logoSize, "ADVERSÁRIO", BLUE_ACCENT);
       }
     } else {
-      drawModernPlaceholder(ctx, oppCx, logoY + logoSize / 2, logoSize, "ADVERSÁRIO", "#64748b");
+      drawPlaceholderLogo(ctx, oppCx, logoCenterY, logoSize, "ADVERSÁRIO", BLUE_ACCENT);
     }
 
     // ============ VS / SCORE ============
-    const vsY = logoY + logoSize / 2;
-
     if (mode === "resultado") {
       const leftScore = side === "home" ? localHomeScore : localAwayScore;
       const rightScore = side === "home" ? localAwayScore : localHomeScore;
 
-      // Score glow
+      // Score background pill
+      ctx.save();
+      ctx.fillStyle = "#0a101f";
+      ctx.globalAlpha = 0.7;
+      roundRect(ctx, CANVAS_W / 2 - 80, logoCenterY - 45, 160, 90, 16);
+      ctx.fill();
+      ctx.restore();
+
       ctx.save();
       ctx.shadowColor = YELLOW;
-      ctx.shadowBlur = 20;
+      ctx.shadowBlur = 25;
       ctx.fillStyle = WHITE;
-      ctx.font = "900 110px 'Segoe UI', Arial, sans-serif";
+      ctx.font = "900 85px 'Segoe UI', Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(`${leftScore}`, CANVAS_W / 2 - 55, vsY + 38);
-      ctx.fillText(`${rightScore}`, CANVAS_W / 2 + 55, vsY + 38);
+      ctx.fillText(`${leftScore}`, CANVAS_W / 2 - 42, logoCenterY + 28);
+      ctx.fillText(`${rightScore}`, CANVAS_W / 2 + 42, logoCenterY + 28);
       ctx.restore();
 
       ctx.fillStyle = YELLOW;
-      ctx.font = "900 55px 'Segoe UI', Arial, sans-serif";
+      ctx.font = "900 40px 'Segoe UI', Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("×", CANVAS_W / 2, vsY + 22);
+      ctx.fillText("×", CANVAS_W / 2, logoCenterY + 14);
     } else {
-      // VS circle
+      // VS badge - minimal and clean
       ctx.save();
-      // Outer ring
+      // Dark circle bg
       ctx.beginPath();
-      ctx.arc(CANVAS_W / 2, vsY, 48, 0, Math.PI * 2);
-      ctx.fillStyle = BLUE;
+      ctx.arc(CANVAS_W / 2, logoCenterY, 42, 0, Math.PI * 2);
+      ctx.fillStyle = "#0a0f1e";
       ctx.fill();
-      ctx.strokeStyle = GOLD;
-      ctx.lineWidth = 3;
+      // Blue accent ring
+      ctx.beginPath();
+      ctx.arc(CANVAS_W / 2, logoCenterY, 42, 0, Math.PI * 2);
+      ctx.strokeStyle = BLUE_ACCENT + "80";
+      ctx.lineWidth = 2;
       ctx.stroke();
-
-      // Inner fill
+      // Inner circle
       ctx.beginPath();
-      ctx.arc(CANVAS_W / 2, vsY, 38, 0, Math.PI * 2);
-      const vsGrad = ctx.createLinearGradient(CANVAS_W / 2 - 38, vsY - 38, CANVAS_W / 2 + 38, vsY + 38);
-      vsGrad.addColorStop(0, YELLOW);
-      vsGrad.addColorStop(1, GOLD);
-      ctx.fillStyle = vsGrad;
+      ctx.arc(CANVAS_W / 2, logoCenterY, 32, 0, Math.PI * 2);
+      ctx.fillStyle = BLUE_ACCENT;
       ctx.fill();
 
-      ctx.fillStyle = BLUE_DARK;
-      ctx.font = "900 30px 'Segoe UI', Arial, sans-serif";
+      ctx.fillStyle = WHITE;
+      ctx.font = "900 26px 'Segoe UI', Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("VS", CANVAS_W / 2, vsY + 11);
+      ctx.fillText("VS", CANVAS_W / 2, logoCenterY + 9);
       ctx.restore();
     }
 
     // ============ TEAM NAMES ============
-    const nameY = logoY + logoSize + 35;
-    ctx.font = "800 28px 'Segoe UI', Arial, sans-serif";
+    const nameY = logoCenterY + logoSize / 2 + 45;
+
+    ctx.font = "800 26px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillStyle = YELLOW_LIGHT;
+    ctx.fillStyle = WHITE;
     ctx.fillText("DISTRITO UNIÃO FC", ourCx, nameY);
 
-    ctx.fillStyle = "#e2e8f0";
+    ctx.fillStyle = WHITE_DIM;
     const oppName = opponent ? opponent.toUpperCase() : "ADVERSÁRIO";
     ctx.fillText(oppName, oppCx, nameY);
 
     // ============ SEPARATOR ============
-    drawGoldSeparator(ctx, nameY + 35);
+    drawThinSeparator(ctx, nameY + 40);
 
     // ============ MAIN TITLE ============
-    const titleY = nameY + 100;
+    const titleBaseY = nameY + 110;
     const mainTitle = mode === "proximo_jogo" ? "PRÓXIMO" : "RESULTADO";
     const subTitle = mode === "proximo_jogo" ? "JOGO" : "FINAL";
 
-    // Main title with glow
+    // Main word - large white geometric block
     ctx.save();
-    ctx.shadowColor = BLUE_GLOW;
-    ctx.shadowBlur = 40;
+    ctx.shadowColor = BLUE_GLOW + "60";
+    ctx.shadowBlur = 50;
     ctx.fillStyle = WHITE;
-    ctx.font = "900 105px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "900 100px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(mainTitle, CANVAS_W / 2, titleY);
+    ctx.fillText(mainTitle, CANVAS_W / 2, titleBaseY);
     ctx.restore();
 
-    // Sub title in gold
+    // Sub word - even larger, blue accent
     ctx.save();
-    ctx.shadowColor = YELLOW + "80";
-    ctx.shadowBlur = 25;
-    const titleGrad = ctx.createLinearGradient(CANVAS_W / 2 - 200, titleY, CANVAS_W / 2 + 200, titleY + 120);
-    titleGrad.addColorStop(0, YELLOW_LIGHT);
-    titleGrad.addColorStop(0.5, YELLOW);
-    titleGrad.addColorStop(1, GOLD);
-    ctx.fillStyle = titleGrad;
-    ctx.font = "900 130px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(subTitle, CANVAS_W / 2, titleY + 125);
+    ctx.shadowColor = BLUE_GLOW + "40";
+    ctx.shadowBlur = 35;
+    ctx.fillStyle = BLUE_GLOW;
+    ctx.font = "900 140px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(subTitle, CANVAS_W / 2, titleBaseY + 130);
     ctx.restore();
 
-    // ============ FOOTER ============
-    drawGoldSeparator(ctx, CANVAS_H - 80);
-
-    ctx.fillStyle = "#64748b";
-    ctx.font = "500 18px 'Segoe UI', Arial, sans-serif";
+    // ============ TEAM NAME BELOW TITLE ============
+    ctx.save();
+    ctx.font = "700 28px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("DISTRITO UNIÃO FC  •  FUTEBOL AMADOR", CANVAS_W / 2, CANVAS_H - 40);
+    ctx.fillStyle = WHITE_DIM;
+    ctx.fillText("DISTRITO UNIÃO", CANVAS_W / 2, titleBaseY + 190);
+    ctx.restore();
+
+    // ============ FOOTER / SPONSORS AREA ============
+    drawThinSeparator(ctx, CANVAS_H - 120);
+
+    // Sponsor line
+    ctx.save();
+    ctx.font = "400 16px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = WHITE_DIM + "80";
+    ctx.fillText("APOIO", CANVAS_W / 2, CANVAS_H - 85);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = WHITE_DIM;
+    ctx.fillText("DISTRITO UNIÃO FC  •  FUTEBOL AMADOR", CANVAS_W / 2, CANVAS_H - 55);
+    ctx.restore();
 
   }, [mode, side, oppLogo, eventType, date, time, location, opponent, localHomeScore, localAwayScore]);
 
@@ -404,7 +401,7 @@ const FlyerGenerator = ({
             </button>
           </div>
 
-          {/* Opponent logo upload only */}
+          {/* Opponent logo upload */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Logo do adversário</label>
             <button
@@ -469,17 +466,22 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
 }
 
-function drawFitImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: number, y: number, size: number) {
+function drawLogoWithShadow(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: number, cy: number, size: number) {
   const asp = img.width / img.height;
   let dw = size, dh = size;
   if (asp > 1) dh = size / asp; else dw = size * asp;
-  ctx.drawImage(img, cx - dw / 2, y + (size - dh) / 2, dw, dh);
+  ctx.save();
+  ctx.shadowColor = "#000000";
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetY = 8;
+  ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+  ctx.restore();
 }
 
-function drawLogoGlow(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
+function drawLogoGlow(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string, alpha: number) {
   ctx.save();
-  ctx.globalAlpha = 0.12;
-  const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+  ctx.globalAlpha = alpha;
+  const g = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
   g.addColorStop(0, color);
   g.addColorStop(1, "transparent");
   ctx.fillStyle = g;
@@ -489,7 +491,7 @@ function drawLogoGlow(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
   ctx.restore();
 }
 
-function drawModernPlaceholder(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, label: string, color: string) {
+function drawPlaceholderLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, label: string, color: string) {
   const r = size * 0.3;
   ctx.save();
   ctx.beginPath();
@@ -501,7 +503,7 @@ function drawModernPlaceholder(ctx: CanvasRenderingContext2D, cx: number, cy: nu
   ctx.setLineDash([8, 6]);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = "#64748b";
+  ctx.fillStyle = "#4a5568";
   ctx.font = "600 18px 'Segoe UI', Arial, sans-serif";
   ctx.textAlign = "center";
   const lines = label.split("\n");
@@ -511,48 +513,15 @@ function drawModernPlaceholder(ctx: CanvasRenderingContext2D, cx: number, cy: nu
   ctx.restore();
 }
 
-function drawGoldSeparator(ctx: CanvasRenderingContext2D, y: number) {
-  const g = ctx.createLinearGradient(150, 0, CANVAS_W - 150, 0);
+function drawThinSeparator(ctx: CanvasRenderingContext2D, y: number) {
+  const g = ctx.createLinearGradient(120, 0, CANVAS_W - 120, 0);
   g.addColorStop(0, "transparent");
-  g.addColorStop(0.2, "#d4a01740");
-  g.addColorStop(0.5, "#facc15");
-  g.addColorStop(0.8, "#d4a01740");
+  g.addColorStop(0.3, "#1a3a7a40");
+  g.addColorStop(0.5, "#2563eb60");
+  g.addColorStop(0.7, "#1a3a7a40");
   g.addColorStop(1, "transparent");
   ctx.fillStyle = g;
-  ctx.fillRect(150, y, CANVAS_W - 300, 2);
-
-  // Small diamond in the center
-  ctx.save();
-  ctx.fillStyle = "#facc15";
-  ctx.translate(CANVAS_W / 2, y + 1);
-  ctx.rotate(Math.PI / 4);
-  ctx.fillRect(-4, -4, 8, 8);
-  ctx.restore();
-}
-
-function drawCornerOrnament(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pos: "tl" | "tr" | "bl" | "br") {
-  ctx.save();
-  ctx.strokeStyle = "#d4a01750";
-  ctx.lineWidth = 2;
-
-  const s = size;
-  ctx.beginPath();
-  if (pos === "tl") {
-    ctx.moveTo(x, y + s); ctx.lineTo(x, y); ctx.lineTo(x + s, y);
-    // Inner corner accent
-    ctx.moveTo(x + 8, y + s * 0.6); ctx.lineTo(x + 8, y + 8); ctx.lineTo(x + s * 0.6, y + 8);
-  } else if (pos === "tr") {
-    ctx.moveTo(x - s, y); ctx.lineTo(x, y); ctx.lineTo(x, y + s);
-    ctx.moveTo(x - s * 0.6, y + 8); ctx.lineTo(x - 8, y + 8); ctx.lineTo(x - 8, y + s * 0.6);
-  } else if (pos === "bl") {
-    ctx.moveTo(x, y - s); ctx.lineTo(x, y); ctx.lineTo(x + s, y);
-    ctx.moveTo(x + 8, y - s * 0.6); ctx.lineTo(x + 8, y - 8); ctx.lineTo(x + s * 0.6, y - 8);
-  } else {
-    ctx.moveTo(x - s, y); ctx.lineTo(x, y); ctx.lineTo(x, y - s);
-    ctx.moveTo(x - s * 0.6, y - 8); ctx.lineTo(x - 8, y - 8); ctx.lineTo(x - 8, y - s * 0.6);
-  }
-  ctx.stroke();
-  ctx.restore();
+  ctx.fillRect(120, y, CANVAS_W - 240, 1);
 }
 
 export default FlyerGenerator;
