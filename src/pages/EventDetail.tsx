@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Clock, CalendarCheck, Swords, Users, Check, Plus, Upload, FileDown, Ban, Image as ImageIcon, UserPlus, X, AlertTriangle, Instagram, Trophy, Target, Handshake, Minus, SquareSlash, CircleX } from "lucide-react";
-import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto, useEventGuests, useSaveEventGuests, useMatchEvents, useSaveMatchEvents, useRecalculatePlayerStats, useSponsors, useAddSponsor, useDeleteSponsor } from "@/hooks/useSupabase";
+import { useEvent, usePlayers, useEventConvocations, useSaveConvocations, useScheduledAbsences, useSaveScheduledAbsences, useTeamSettings, useUpdateEvent, uploadPhoto, useEventGuests, useSaveEventGuests, useMatchEvents, useSaveMatchEvents, useRecalculatePlayerStats, useSponsors, useUpdateSponsor } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import FlyerGenerator from "@/components/FlyerGenerator";
 import ConvocationCard from "@/components/ConvocationCard";
@@ -30,9 +30,11 @@ const EventDetail = () => {
   const updateEvent = useUpdateEvent();
   const saveMatchEvents = useSaveMatchEvents();
   const recalcStats = useRecalculatePlayerStats();
-  const addSponsor = useAddSponsor();
-  const deleteSponsor = useDeleteSponsor();
+  const updateSponsor = useUpdateSponsor();
   const sponsorLogoRef2 = useRef<HTMLInputElement>(null);
+  const [selectedSponsorIds, setSelectedSponsorIds] = useState<string[]>([]);
+  const [showSponsorSelector, setShowSponsorSelector] = useState(false);
+  const [updatingLogoSponsorId, setUpdatingLogoSponsorId] = useState<string | null>(null);
   const logoRef = useRef<HTMLInputElement>(null);
   const [showFlyer, setShowFlyer] = useState(false);
   const [showConvocationCard, setShowConvocationCard] = useState(false);
@@ -427,66 +429,6 @@ const EventDetail = () => {
         )}
       </div>
 
-      {/* Sponsors Management */}
-      <div className="px-4 mb-4 mt-4">
-        <div className="card-elevated">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <ImageIcon size={14} /> Patrocinadores ({sponsors.length})
-            </h4>
-            <button
-              onClick={() => sponsorLogoRef2.current?.click()}
-              className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground"
-            >
-              <Plus size={16} />
-            </button>
-            <input
-              ref={sponsorLogoRef2}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const name = prompt("Nome do patrocinador:");
-                if (!name) return;
-                try {
-                  const path = `sponsors/${Date.now()}-${file.name}`;
-                  const url = await uploadPhoto("photos", path, file);
-                  await addSponsor.mutateAsync({ name, logo_url: url });
-                  toast.success("Patrocinador adicionado!");
-                } catch {
-                  toast.error("Erro ao adicionar patrocinador");
-                }
-              }}
-            />
-          </div>
-          {sponsors.length > 0 ? (
-            <div className="space-y-2">
-              {sponsors.map((s: any) => (
-                <div key={s.id} className="flex items-center gap-3 py-1.5">
-                  {s.logo_url && (
-                    <img src={s.logo_url} alt={s.name} className="w-10 h-10 object-contain rounded bg-secondary p-1" />
-                  )}
-                  <span className="text-sm font-medium flex-1">{s.name}</span>
-                  <button
-                    onClick={async () => {
-                      await deleteSponsor.mutateAsync(s.id);
-                      toast.success("Patrocinador removido");
-                    }}
-                    className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center"
-                  >
-                    <X size={12} className="text-destructive" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Nenhum patrocinador cadastrado. Toque em + para adicionar.</p>
-          )}
-        </div>
-      </div>
-
       {/* Player Selector Modal */}
       {showSelector && (
         <div className="fixed inset-0 bg-black/60 z-50 flex flex-col justify-end">
@@ -649,7 +591,7 @@ const EventDetail = () => {
           opponentLogoUrl={event.opponent_logo_url}
           homeScore={(event as any).home_score}
           awayScore={(event as any).away_score}
-          sponsors={sponsors}
+          sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
         />
       )}
 
@@ -664,7 +606,7 @@ const EventDetail = () => {
         location={event.location}
         players={convokedPlayers.map(p => ({ name: p.name, nickname: p.nickname, number: p.number, positions: p.positions || [] }))}
         guests={guests.map((g: any) => ({ nickname: g.nickname }))}
-        sponsors={sponsors}
+        sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
       />
 
       {/* Post-Match Modal */}
@@ -818,7 +760,7 @@ const EventDetail = () => {
             const player = convokedPlayers.find(p => p.id === e.player_id);
             return { player_id: e.player_id, player_name: player?.name || "?", type: e.type };
           })}
-          sponsors={sponsors}
+          sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
         />
       )}
     </div>
