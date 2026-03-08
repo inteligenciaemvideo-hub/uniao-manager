@@ -406,6 +406,40 @@ export const useRecalculatePlayerStats = () => {
   });
 };
 
+// ============ SPONSORS ============
+export const useSponsors = () =>
+  useQuery({
+    queryKey: ["sponsors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("team_sponsors").select("*").order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+export const useAddSponsor = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sponsor: { name: string; logo_url?: string }) => {
+      const { data, error } = await supabase.from("team_sponsors").insert(sponsor).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sponsors"] }),
+  });
+};
+
+export const useDeleteSponsor = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("team_sponsors").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sponsors"] }),
+  });
+};
+
 // ============ STORAGE ============
 export const uploadPhoto = async (bucket: string, path: string, file: File) => {
   const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
