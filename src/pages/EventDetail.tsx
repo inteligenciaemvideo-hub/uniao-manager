@@ -637,6 +637,7 @@ const EventDetail = () => {
           opponentLogoUrl={event.opponent_logo_url}
           homeScore={(event as any).home_score}
           awayScore={(event as any).away_score}
+          sponsors={sponsors}
         />
       )}
 
@@ -651,6 +652,7 @@ const EventDetail = () => {
         location={event.location}
         players={convokedPlayers.map(p => ({ name: p.name, nickname: p.nickname, number: p.number, positions: p.positions || [] }))}
         guests={guests.map((g: any) => ({ nickname: g.nickname }))}
+        sponsors={sponsors}
       />
 
       {/* Post-Match Modal */}
