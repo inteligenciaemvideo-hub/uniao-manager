@@ -56,26 +56,14 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      // Verificar se já existe conta com mesmo CPF
-      const { data: existingCpf } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("cpf", cpfDigits)
-        .maybeSingle();
-      if (existingCpf) {
-        toast({ title: "CPF já cadastrado", description: "Já existe uma conta com este CPF", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-
-      // Verificar se já existe conta com mesmo telefone
-      const { data: existingPhone } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("phone", phoneDigits)
-        .maybeSingle();
-      if (existingPhone) {
-        toast({ title: "Telefone já cadastrado", description: "Já existe uma conta com este telefone", variant: "destructive" });
+      // Verificar duplicatas via função segura
+      const { data: check } = await supabase.rpc("check_duplicate_registration", {
+        _cpf: cpfDigits,
+        _phone: phoneDigits,
+      });
+      if (check?.duplicate) {
+        const fieldName = check.field === "cpf" ? "CPF" : "Telefone";
+        toast({ title: `${fieldName} já cadastrado`, description: `Já existe uma conta com este ${fieldName}`, variant: "destructive" });
         setLoading(false);
         return;
       }
