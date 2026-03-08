@@ -373,9 +373,10 @@ const EventDetail = () => {
 
       {/* Player Selector Modal */}
       {showSelector && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
-          <div className="w-full bg-card rounded-t-2xl max-h-[85vh] flex flex-col">
-            <div className="px-4 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col justify-end">
+          <div className="w-full bg-card rounded-t-2xl flex flex-col" style={{ maxHeight: "85vh" }}>
+            {/* Header - fixed */}
+            <div className="px-4 py-4 border-b border-border flex items-center justify-between shrink-0">
               <h3 className="text-sm font-bold">Selecionar Convocados</h3>
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-semibold ${totalConvocados < MIN_CONVOCADOS ? "text-destructive" : totalConvocados > MAX_CONVOCADOS ? "text-destructive" : "text-success"}`}>
@@ -387,13 +388,14 @@ const EventDetail = () => {
               </div>
             </div>
 
-            <div className="px-4 py-2 bg-secondary/30 border-b border-border">
+            <div className="px-4 py-2 bg-secondary/30 border-b border-border shrink-0">
               <p className="text-[10px] text-muted-foreground">
                 Mínimo <span className="font-bold text-foreground">{MIN_CONVOCADOS}</span> e máximo <span className="font-bold text-foreground">{MAX_CONVOCADOS}</span> atletas (incluindo convidados)
               </p>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
+            {/* Scrollable list */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 py-2 space-y-1">
               {activePlayers.map(player => {
                 const isSelected = selected.includes(player.id);
                 return (
@@ -448,26 +450,38 @@ const EventDetail = () => {
               </div>
             </div>
 
-            {/* Sticky footer with confirm */}
-            <div className="px-4 py-4 border-t border-border bg-card shrink-0 space-y-2">
-              {!canConfirm && (
+            {/* Footer - ALWAYS visible */}
+            <div className="px-4 py-4 border-t border-border bg-card shrink-0 space-y-3">
+              {!canConfirm && totalConvocados > 0 && (
                 <p className="text-[10px] text-destructive text-center font-medium">
                   {totalConvocados < MIN_CONVOCADOS
                     ? `Selecione pelo menos ${MIN_CONVOCADOS} atletas (faltam ${MIN_CONVOCADOS - totalConvocados})`
                     : `Máximo de ${MAX_CONVOCADOS} atletas ultrapassado`}
                 </p>
               )}
-              <div className="flex gap-3">
-                <button onClick={() => setShowSelector(false)} className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm">Cancelar</button>
-                <button
-                  onClick={handleSaveConvocation}
-                  disabled={!canConfirm || saveConvocations.isPending}
-                  className="flex-1 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
-                >
-                  <Check size={16} />
-                  {saveConvocations.isPending ? "Salvando..." : `Confirmar Escalação (${totalConvocados})`}
-                </button>
-              </div>
+              <button
+                onClick={handleSaveConvocation}
+                disabled={!canConfirm || saveConvocations.isPending}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <Check size={16} />
+                {saveConvocations.isPending ? "Salvando..." : `Confirmar Escalação (${totalConvocados})`}
+              </button>
+              <button
+                onClick={() => {
+                  if (canConfirm) {
+                    handleSaveConvocation().then(() => setShowConvocationCard(true));
+                  }
+                }}
+                disabled={!canConfirm || saveConvocations.isPending}
+                className="w-full py-3 rounded-xl bg-primary/10 text-primary font-semibold text-sm border border-primary/30 disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <FileDown size={16} />
+                Exportar Convocação
+              </button>
+              <button onClick={() => setShowSelector(false)} className="w-full py-2.5 text-muted-foreground text-sm font-medium">
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
