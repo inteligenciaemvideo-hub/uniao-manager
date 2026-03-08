@@ -7,6 +7,8 @@ import FlyerGenerator from "@/components/FlyerGenerator";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [flyerOpen, setFlyerOpen] = useState(false);
+  const [flyerEvent, setFlyerEvent] = useState<any>(null);
   const { data: players = [] } = usePlayers();
   const { data: events = [] } = useEvents();
   const { data: financials = [] } = useFinancials();
