@@ -1,0 +1,1 @@
+ALTER TABLE public.monthly_payments ADD CONSTRAINT monthly_payments_player_month_unique UNIQUE (player_id, month);

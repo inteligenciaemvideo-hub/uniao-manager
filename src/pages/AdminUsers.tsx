@@ -66,11 +66,6 @@ const AdminUsers = () => {
                       {p.birth_date && ` · Nasc: ${p.birth_date}`}
                       {p.phone && ` · Tel: ${p.phone}`}
                     </p>
-                    {p.document_url && (
-                      <a href={p.document_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
-                        <FileText size={12} /> Ver documento
-                      </a>
-                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
