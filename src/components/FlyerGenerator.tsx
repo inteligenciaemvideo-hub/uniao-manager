@@ -326,7 +326,7 @@ const FlyerGenerator = ({
     ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillStyle = WHITE_DIM;
-    ctx.fillText("DISTRITO UNIÃO FC  •  FUTEBOL AMADOR", CANVAS_W / 2, CANVAS_H - 55);
+    ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 55);
     ctx.restore();
 
   }, [mode, side, oppLogo, eventType, date, time, location, opponent, localHomeScore, localAwayScore]);
