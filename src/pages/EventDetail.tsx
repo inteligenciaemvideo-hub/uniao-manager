@@ -386,6 +386,7 @@ const EventDetail = () => {
           className="w-full py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <CalendarCheck size={16} />Fazer Chamada
+        </button>
 
         {/* Sponsor Selector for Flyers */}
         {event.opponent && (
