@@ -453,6 +453,17 @@ export const useDeleteSponsor = () => {
   });
 };
 
+// ============ ALL ATTENDANCE (for stats) ============
+export const useAllAttendance = () =>
+  useQuery({
+    queryKey: ["all_event_attendance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("event_attendance").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
 // ============ STORAGE ============
 export const uploadPhoto = async (bucket: string, path: string, file: File) => {
   const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });

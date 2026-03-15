@@ -304,73 +304,77 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* Convocation */}
-      <div className="px-4 mb-4">
-        <div className="card-elevated">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Users size={14} /> Convocados ({convoked.length + guests.length})
-              {convocationConfirmed && convoked.length > 0 && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/20 text-success ml-1">Confirmada</span>
-              )}
-            </h4>
-            <button onClick={openConvocationSelector} className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground"><Plus size={16} /></button>
-          </div>
-          {convokedPlayers.length > 0 || guests.length > 0 ? (
-            <div className="space-y-2">
-              {convokedPlayers.map(player => (
-                <div key={player.id} className="flex items-center gap-3 py-1.5">
-                  <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{player.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{(player.positions || []).join(", ")} · #{player.number}</p>
-                  </div>
-                  <Check size={14} className="text-success" />
-                </div>
-              ))}
-              {guests.map((g: any) => (
-                <div key={g.id} className="flex items-center gap-3 py-1.5">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    <UserPlus size={14} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{g.nickname}</p>
-                    <p className="text-[10px] text-yellow-500 font-semibold">Convidado</p>
-                  </div>
-                </div>
-              ))}
+      {/* Convocation - only for non-Treino events */}
+      {event.type !== "Treino" && (
+        <div className="px-4 mb-4">
+          <div className="card-elevated">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Users size={14} /> Convocados ({convoked.length + guests.length})
+                {convocationConfirmed && convoked.length > 0 && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/20 text-success ml-1">Confirmada</span>
+                )}
+              </h4>
+              <button onClick={openConvocationSelector} className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground"><Plus size={16} /></button>
             </div>
-          ) : <p className="text-xs text-muted-foreground">Nenhum atleta convocado ainda.</p>}
+            {convokedPlayers.length > 0 || guests.length > 0 ? (
+              <div className="space-y-2">
+                {convokedPlayers.map(player => (
+                  <div key={player.id} className="flex items-center gap-3 py-1.5">
+                    <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{(player.positions || []).join(", ")} · #{player.number}</p>
+                    </div>
+                    <Check size={14} className="text-success" />
+                  </div>
+                ))}
+                {guests.map((g: any) => (
+                  <div key={g.id} className="flex items-center gap-3 py-1.5">
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
+                      <UserPlus size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{g.nickname}</p>
+                      <p className="text-[10px] text-yellow-500 font-semibold">Convidado</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-xs text-muted-foreground">Nenhum atleta convocado ainda.</p>}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Scheduled Absences */}
-      <div className="px-4 mb-4">
-        <div className="card-elevated">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Ban size={14} /> Ausências Programadas ({absences.length})</h4>
-            <button onClick={() => { setSelectedAbsences(absences); setShowAbsenceSelector(true); }} className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center text-destructive"><Plus size={16} /></button>
-          </div>
-          {absentPlayers.length > 0 ? (
-            <div className="space-y-2">
-              {absentPlayers.map(player => (
-                <div key={player.id} className="flex items-center gap-3 py-1.5">
-                  <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{player.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{(player.positions || []).join(", ")} · #{player.number}</p>
-                  </div>
-                  <span className="badge-pending text-[10px]">Ausente</span>
-                </div>
-              ))}
+      {/* Scheduled Absences - only for non-Treino events */}
+      {event.type !== "Treino" && (
+        <div className="px-4 mb-4">
+          <div className="card-elevated">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Ban size={14} /> Ausências Programadas ({absences.length})</h4>
+              <button onClick={() => { setSelectedAbsences(absences); setShowAbsenceSelector(true); }} className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center text-destructive"><Plus size={16} /></button>
             </div>
-          ) : <p className="text-xs text-muted-foreground">Nenhuma ausência programada.</p>}
+            {absentPlayers.length > 0 ? (
+              <div className="space-y-2">
+                {absentPlayers.map(player => (
+                  <div key={player.id} className="flex items-center gap-3 py-1.5">
+                    <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{(player.positions || []).join(", ")} · #{player.number}</p>
+                    </div>
+                    <span className="badge-pending text-[10px]">Ausente</span>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-xs text-muted-foreground">Nenhuma ausência programada.</p>}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Actions */}
       <div className="px-4 space-y-3">
-        {!convocationConfirmed && convoked.length === 0 && (
+        {event.type !== "Treino" && !convocationConfirmed && convoked.length === 0 && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-xs font-medium">
             <AlertTriangle size={14} />
             Confirme a convocação antes de fazer a chamada
@@ -378,7 +382,7 @@ const EventDetail = () => {
         )}
         <button
           onClick={() => navigate(`/compromissos/${event.id}`)}
-          disabled={!convocationConfirmed && convoked.length === 0}
+          disabled={event.type !== "Treino" && !convocationConfirmed && convoked.length === 0}
           className="w-full py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <CalendarCheck size={16} />Fazer Chamada
