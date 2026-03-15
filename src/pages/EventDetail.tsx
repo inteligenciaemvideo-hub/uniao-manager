@@ -384,10 +384,22 @@ const EventDetail = () => {
           <CalendarCheck size={16} />Fazer Chamada
         </button>
 
+        {/* Sponsor Selector for Flyers */}
         {event.opponent && (
-          <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
-            <ImageIcon size={16} />Gerar Flyer do Jogo
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowSponsorSelector(true)}
+              className="w-full py-2.5 rounded-xl bg-secondary text-foreground font-semibold text-xs flex items-center justify-center gap-2 border border-border"
+            >
+              <Handshake size={14} />
+              {selectedSponsorIds.length > 0
+                ? `${selectedSponsorIds.length} patrocinador(es) selecionado(s)`
+                : "Selecionar Patrocinadores p/ Flyers"}
+            </button>
+            <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
+              <ImageIcon size={16} />Gerar Flyer do Jogo
+            </button>
+          </div>
         )}
 
         {/* PDF & Instagram buttons - only after convocation confirmed */}
@@ -578,7 +590,64 @@ const EventDetail = () => {
         </div>
       )}
 
-      {/* Flyer Generator */}
+      {/* Sponsor Selector Modal */}
+      {showSponsorSelector && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
+          <div className="w-full bg-card rounded-t-2xl max-h-[80vh] flex flex-col">
+            <div className="px-4 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-bold">Selecionar Patrocinadores</h3>
+              <button onClick={() => setShowSponsorSelector(false)} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
+              <button
+                onClick={() => setSelectedSponsorIds(selectedSponsorIds.length === sponsors.length ? [] : sponsors.map((s: any) => s.id))}
+                className="w-full py-2 px-3 rounded-lg bg-secondary/50 text-xs font-semibold text-muted-foreground mb-2"
+              >
+                {selectedSponsorIds.length === sponsors.length ? "Desmarcar Todos" : "Selecionar Todos"}
+              </button>
+              {sponsors.map((sponsor: any) => {
+                const isSelected = selectedSponsorIds.includes(sponsor.id);
+                return (
+                  <button
+                    key={sponsor.id}
+                    onClick={() => setSelectedSponsorIds(prev => isSelected ? prev.filter(id => id !== sponsor.id) : [...prev, sponsor.id])}
+                    className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors ${isSelected ? "bg-primary/10 border border-primary/30" : "hover:bg-secondary/50"}`}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center overflow-hidden shrink-0">
+                      {sponsor.logo_url ? (
+                        <img src={sponsor.logo_url} alt={sponsor.name} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <Handshake size={16} className="text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium">{sponsor.name}</p>
+                      {!sponsor.logo_url && <p className="text-[10px] text-muted-foreground">Sem logo</p>}
+                    </div>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isSelected ? "bg-primary border-primary" : "border-muted-foreground"}`}>
+                      {isSelected && <Check size={12} className="text-primary-foreground" />}
+                    </div>
+                  </button>
+                );
+              })}
+              {sponsors.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-8">Nenhum patrocinador cadastrado. Cadastre na aba Patrocínios.</p>
+              )}
+            </div>
+            <div className="px-4 py-4 border-t border-border">
+              <button
+                onClick={() => setShowSponsorSelector(false)}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm"
+              >
+                Confirmar ({selectedSponsorIds.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {event.opponent && (
         <FlyerGenerator
           open={showFlyer}

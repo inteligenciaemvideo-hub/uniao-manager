@@ -32,13 +32,6 @@ const CANVAS_W = 1080;
 const CANVAS_H = 1350;
 const TEAM_LOGO_PATH = "/images/distrito-uniao-logo.png";
 
-const BG_BLACK = "#050a12";
-const BLUE_ACCENT = "#1a3a7a";
-const BLUE_GLOW = "#2563eb";
-const WHITE = "#ffffff";
-const WHITE_DIM = "#8899bb";
-const GOLD = "#eab308";
-
 const loadImage = (src: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -48,13 +41,15 @@ const loadImage = (src: string): Promise<HTMLImageElement> =>
     img.src = src;
   });
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+function drawFitLogo(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: number, cy: number, size: number) {
+  const asp = img.width / img.height;
+  let dw = size, dh = size;
+  if (asp > 1) dh = size / asp; else dw = size * asp;
+  ctx.save();
+  ctx.shadowColor = "#00000080";
+  ctx.shadowBlur = 30;
+  ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+  ctx.restore();
 }
 
 const ResultFlyerGenerator = ({
@@ -66,8 +61,6 @@ const ResultFlyerGenerator = ({
 
   const goals = matchEntries.filter(e => e.type === "goal");
   const assists = matchEntries.filter(e => e.type === "assist");
-  const yellows = matchEntries.filter(e => e.type === "yellow_card");
-  const reds = matchEntries.filter(e => e.type === "red_card");
 
   const drawFlyer = useCallback(async () => {
     const canvas = canvasRef.current;
@@ -75,156 +68,135 @@ const ResultFlyerGenerator = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Background
-    ctx.fillStyle = BG_BLACK;
+    // ============ BACKGROUND - BLUE (matching ref image 2) ============
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+    bgGrad.addColorStop(0, "#1a3f7a");
+    bgGrad.addColorStop(0.5, "#163670");
+    bgGrad.addColorStop(1, "#0e2550");
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Blue side accents
-    for (let i = 0; i < 8; i++) {
-      ctx.save();
-      ctx.globalAlpha = 0.12 - i * 0.012;
-      const leftG = ctx.createLinearGradient(0, 0, 180, 0);
-      leftG.addColorStop(0, BLUE_GLOW);
-      leftG.addColorStop(1, "transparent");
-      ctx.fillStyle = leftG;
-      ctx.fillRect(0, i * (CANVAS_H / 8), 180, CANVAS_H / 8);
-      const rightG = ctx.createLinearGradient(CANVAS_W, 0, CANVAS_W - 180, 0);
-      rightG.addColorStop(0, BLUE_GLOW);
-      rightG.addColorStop(1, "transparent");
-      ctx.fillStyle = rightG;
-      ctx.fillRect(CANVAS_W - 180, i * (CANVAS_H / 8), 180, CANVAS_H / 8);
-      ctx.restore();
+    // Subtle hexagon/geometric pattern overlay
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    for (let row = 0; row < 15; row++) {
+      for (let col = 0; col < 12; col++) {
+        const x = col * 100 + (row % 2 === 0 ? 0 : 50);
+        const y = row * 100;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i - Math.PI / 6;
+          const px = x + 40 * Math.cos(angle);
+          const py = y + 40 * Math.sin(angle);
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = "#4488cc";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
     }
-
-    // Center glow
-    ctx.save();
-    ctx.globalAlpha = 0.1;
-    const cGlow = ctx.createRadialGradient(CANVAS_W / 2, 250, 50, CANVAS_W / 2, 250, 500);
-    cGlow.addColorStop(0, BLUE_GLOW);
-    cGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = cGlow;
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.restore();
 
-    // ============ HEADER ============
-    const headerY = 70;
+    // Dark overlay at edges
     ctx.save();
-    ctx.font = "900 50px 'Segoe UI', Arial, sans-serif";
+    ctx.globalAlpha = 0.3;
+    const edgeL = ctx.createLinearGradient(0, 0, 150, 0);
+    edgeL.addColorStop(0, "#061230");
+    edgeL.addColorStop(1, "transparent");
+    ctx.fillStyle = edgeL;
+    ctx.fillRect(0, 0, 150, CANVAS_H);
+    const edgeR = ctx.createLinearGradient(CANVAS_W, 0, CANVAS_W - 150, 0);
+    edgeR.addColorStop(0, "#061230");
+    edgeR.addColorStop(1, "transparent");
+    ctx.fillStyle = edgeR;
+    ctx.fillRect(CANVAS_W - 150, 0, 150, CANVAS_H);
+    ctx.restore();
+
+    // ============ TITLE: FIM DE JOGO ============
+    const titleY = 180;
+
+    // "FIM DE" - white bold
+    ctx.save();
+    ctx.font = "900 140px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.shadowColor = "#000";
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "#00000060";
     ctx.shadowBlur = 20;
-    ctx.fillStyle = WHITE;
-    ctx.fillText(eventType.toUpperCase(), CANVAS_W / 2, headerY);
+    ctx.fillText("FIM DE", CANVAS_W / 2, titleY);
     ctx.restore();
 
-    const dateStr = date ? new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "--/--";
+    // "JOGO" - dark/navy bold (contrast against blue bg)
     ctx.save();
-    ctx.font = "600 22px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "900 180px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillStyle = BLUE_GLOW;
-    ctx.fillText(`${dateStr} / ${location.toUpperCase()} / ${time}H`, CANVAS_W / 2, headerY + 40);
+    ctx.fillStyle = "#0a1e40";
+    ctx.shadowColor = "#00000040";
+    ctx.shadowBlur = 10;
+    ctx.fillText("JOGO", CANVAS_W / 2, titleY + 170);
     ctx.restore();
 
     // ============ LOGOS + SCORE ============
-    const logoCenterY = 230;
-    const logoSize = 200;
-    const leftCx = CANVAS_W / 2 - 200;
-    const rightCx = CANVAS_W / 2 + 200;
+    const scoreY = titleY + 330;
+    const logoSize = 160;
+    const scoreCx = CANVAS_W / 2;
 
-    // Team logo
+    const leftCx = scoreCx - 220;
+    const rightCx = scoreCx + 220;
+    const ourCx = side === "home" ? leftCx : rightCx;
+    const oppCx2 = side === "home" ? rightCx : leftCx;
+
+    // Our team logo
     try {
       const teamImg = await loadImage(TEAM_LOGO_PATH);
-      drawFitLogo(ctx, teamImg, side === "home" ? leftCx : rightCx, logoCenterY, logoSize);
+      drawFitLogo(ctx, teamImg, ourCx, scoreY, logoSize);
     } catch {}
 
     // Opponent logo
     if (opponentLogoUrl) {
       try {
         const oppImg = await loadImage(opponentLogoUrl);
-        drawFitLogo(ctx, oppImg, side === "home" ? rightCx : leftCx, logoCenterY, logoSize);
+        drawFitLogo(ctx, oppImg, oppCx2, scoreY, logoSize);
       } catch {}
     }
 
-    // Team names
-    ctx.save();
-    ctx.font = "700 18px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillStyle = WHITE;
-    ctx.fillText("DISTRITO UNIÃO", side === "home" ? leftCx : rightCx, logoCenterY + logoSize / 2 + 25);
-    ctx.fillStyle = WHITE_DIM;
-    ctx.fillText(opponent.toUpperCase(), side === "home" ? rightCx : leftCx, logoCenterY + logoSize / 2 + 25);
-    ctx.restore();
-
-    // Score in center
+    // Score in center - big bold
     const leftScore = side === "home" ? homeScore : awayScore;
     const rightScore = side === "home" ? awayScore : homeScore;
 
+    // Score background
     ctx.save();
-    ctx.fillStyle = BG_BLACK;
-    ctx.globalAlpha = 0.8;
-    roundRect(ctx, CANVAS_W / 2 - 80, logoCenterY - 45, 160, 90, 16);
+    ctx.fillStyle = "#0d1f45";
+    ctx.globalAlpha = 0.6;
+    const scoreBoxW = 200;
+    const scoreBoxH = 100;
+    ctx.beginPath();
+    ctx.roundRect(scoreCx - scoreBoxW / 2, scoreY - scoreBoxH / 2, scoreBoxW, scoreBoxH, 16);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
-    ctx.shadowColor = BLUE_GLOW;
-    ctx.shadowBlur = 30;
-    ctx.fillStyle = WHITE;
-    ctx.font = "900 80px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "900 90px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`${leftScore}`, CANVAS_W / 2 - 42, logoCenterY + 28);
-    ctx.fillText(`${rightScore}`, CANVAS_W / 2 + 42, logoCenterY + 28);
-    ctx.restore();
-
-    ctx.fillStyle = GOLD;
-    ctx.font = "900 36px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("×", CANVAS_W / 2, logoCenterY + 14);
-
-    // ============ RESULT TITLE ============
-    const titleY = logoCenterY + logoSize / 2 + 70;
-    ctx.save();
+    ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "#000";
-    ctx.shadowBlur = 30;
-    ctx.fillStyle = WHITE;
-    ctx.font = "900 80px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("RESULTADO", CANVAS_W / 2, titleY);
+    ctx.shadowBlur = 15;
+    ctx.fillText(`${leftScore}`, scoreCx - 55, scoreY + 32);
+    ctx.fillText(`${rightScore}`, scoreCx + 55, scoreY + 32);
     ctx.restore();
 
+    // X separator
     ctx.save();
-    ctx.fillStyle = BLUE_GLOW;
-    ctx.font = "900 100px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "900 50px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.shadowColor = BLUE_GLOW;
-    ctx.shadowBlur = 30;
-    ctx.fillText("FINAL", CANVAS_W / 2, titleY + 95);
+    ctx.fillStyle = "#fbbf24";
+    ctx.fillText("X", scoreCx, scoreY + 18);
     ctx.restore();
 
-    // ============ STATS SECTION ============
-    let statsY = titleY + 140;
-    const mx = 100;
-    const colW = CANVAS_W - mx * 2;
+    // ============ GOAL SCORERS ============
+    let statsY = scoreY + logoSize / 2 + 60;
 
-    // Separator
-    const sep = ctx.createLinearGradient(mx, 0, CANVAS_W - mx, 0);
-    sep.addColorStop(0, "transparent");
-    sep.addColorStop(0.5, BLUE_GLOW + "60");
-    sep.addColorStop(1, "transparent");
-    ctx.fillStyle = sep;
-    ctx.fillRect(mx, statsY, colW, 2);
-    statsY += 25;
-
-    // Goals
     if (goals.length > 0) {
-      ctx.save();
-      ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
-      ctx.fillStyle = GOLD;
-      ctx.textAlign = "left";
-      ctx.fillText("⚽  GOLS", mx + 10, statsY);
-      ctx.restore();
-      statsY += 10;
-
       // Group by player
       const goalsByPlayer: Record<string, { name: string; count: number }> = {};
       goals.forEach(g => {
@@ -233,34 +205,21 @@ const ResultFlyerGenerator = ({
       });
 
       Object.values(goalsByPlayer).forEach(({ name, count }) => {
-        statsY += 30;
         ctx.save();
-        ctx.font = "600 22px 'Segoe UI', Arial, sans-serif";
-        ctx.fillStyle = WHITE;
+        ctx.font = "700 28px 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "left";
+        ctx.fillStyle = "#ffffff";
         const displayName = name.length > 25 ? name.substring(0, 24) + "…" : name;
-        ctx.fillText(displayName, mx + 40, statsY);
-        if (count > 1) {
-          ctx.fillStyle = GOLD;
-          ctx.font = "700 18px 'Segoe UI', Arial, sans-serif";
-          ctx.fillText(`(${count}x)`, mx + 40 + ctx.measureText(displayName).width + 10, statsY);
-        }
+        const text = count > 1 ? `⚽  ${displayName.toUpperCase()} (${count}x)` : `⚽  ${displayName.toUpperCase()}`;
+        ctx.fillText(text, 120, statsY);
         ctx.restore();
+        statsY += 42;
       });
-      statsY += 15;
     }
 
     // Assists
     if (assists.length > 0) {
       statsY += 10;
-      ctx.save();
-      ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
-      ctx.fillStyle = BLUE_GLOW;
-      ctx.textAlign = "left";
-      ctx.fillText("👟  ASSISTÊNCIAS", mx + 10, statsY);
-      ctx.restore();
-      statsY += 10;
-
       const assistsByPlayer: Record<string, { name: string; count: number }> = {};
       assists.forEach(a => {
         if (!assistsByPlayer[a.player_id]) assistsByPlayer[a.player_id] = { name: a.player_name, count: 0 };
@@ -268,84 +227,45 @@ const ResultFlyerGenerator = ({
       });
 
       Object.values(assistsByPlayer).forEach(({ name, count }) => {
-        statsY += 30;
         ctx.save();
-        ctx.font = "600 22px 'Segoe UI', Arial, sans-serif";
-        ctx.fillStyle = WHITE_DIM;
+        ctx.font = "600 24px 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "left";
+        ctx.fillStyle = "#8fb8e8";
         const displayName = name.length > 25 ? name.substring(0, 24) + "…" : name;
-        ctx.fillText(displayName, mx + 40, statsY);
-        if (count > 1) {
-          ctx.fillStyle = BLUE_GLOW;
-          ctx.font = "700 18px 'Segoe UI', Arial, sans-serif";
-          ctx.fillText(`(${count}x)`, mx + 40 + ctx.measureText(displayName).width + 10, statsY);
-        }
+        const text = count > 1 ? `👟  ${displayName.toUpperCase()} (${count}x)` : `👟  ${displayName.toUpperCase()}`;
+        ctx.fillText(text, 120, statsY);
         ctx.restore();
-      });
-      statsY += 15;
-    }
-
-    // Cards
-    if (yellows.length > 0 || reds.length > 0) {
-      statsY += 10;
-      ctx.save();
-      ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
-      ctx.fillStyle = "#f59e0b";
-      ctx.textAlign = "left";
-      ctx.fillText("🟨  CARTÕES", mx + 10, statsY);
-      ctx.restore();
-      statsY += 10;
-
-      const allCards = [...yellows, ...reds];
-      const cardsByPlayer: Record<string, { name: string; yellows: number; reds: number }> = {};
-      allCards.forEach(c => {
-        if (!cardsByPlayer[c.player_id]) cardsByPlayer[c.player_id] = { name: c.player_name, yellows: 0, reds: 0 };
-        if (c.type === "yellow_card") cardsByPlayer[c.player_id].yellows++;
-        if (c.type === "red_card") cardsByPlayer[c.player_id].reds++;
-      });
-
-      Object.values(cardsByPlayer).forEach(({ name, yellows: y, reds: r }) => {
-        statsY += 30;
-        ctx.save();
-        ctx.font = "600 22px 'Segoe UI', Arial, sans-serif";
-        ctx.fillStyle = WHITE_DIM;
-        ctx.textAlign = "left";
-        const displayName = name.length > 20 ? name.substring(0, 19) + "…" : name;
-        ctx.fillText(displayName, mx + 40, statsY);
-        let cardText = "";
-        if (y > 0) cardText += `${y}🟨 `;
-        if (r > 0) cardText += `${r}🟥`;
-        ctx.font = "600 20px 'Segoe UI', Arial, sans-serif";
-        ctx.textAlign = "right";
-        ctx.fillText(cardText, CANVAS_W - mx - 20, statsY);
-        ctx.restore();
+        statsY += 36;
       });
     }
 
     // ============ FOOTER - SPONSORS ============
-    const footerY = CANVAS_H - 100;
-    const fSep = ctx.createLinearGradient(150, 0, CANVAS_W - 150, 0);
-    fSep.addColorStop(0, "transparent");
-    fSep.addColorStop(0.5, BLUE_GLOW + "40");
-    fSep.addColorStop(1, "transparent");
-    ctx.fillStyle = fSep;
-    ctx.fillRect(150, footerY - 30, CANVAS_W - 300, 1);
+    const footerY = CANVAS_H - 90;
 
+    // Separator
+    const sep = ctx.createLinearGradient(150, 0, CANVAS_W - 150, 0);
+    sep.addColorStop(0, "transparent");
+    sep.addColorStop(0.5, "#ffffff30");
+    sep.addColorStop(1, "transparent");
+    ctx.fillStyle = sep;
+    ctx.fillRect(150, footerY - 40, CANVAS_W - 300, 1);
+
+    // Sponsor logos
     const sponsorsWithLogo = sponsors.filter(s => s.logo_url);
     if (sponsorsWithLogo.length > 0) {
       const maxLogoH = 50;
       const gap = 30;
-      const logoImages: { img: HTMLImageElement; w: number; h: number }[] = [];
+      const logoImgs: { img: HTMLImageElement; w: number; h: number }[] = [];
       for (const sponsor of sponsorsWithLogo) {
         try {
           const img = await loadImage(sponsor.logo_url!);
           const asp = img.width / img.height;
-          logoImages.push({ img, w: maxLogoH * asp, h: maxLogoH });
+          logoImgs.push({ img, w: maxLogoH * asp, h: maxLogoH });
         } catch {}
       }
-      const totalW = logoImages.reduce((sum, l) => sum + l.w, 0) + (logoImages.length - 1) * gap;
+      const totalW = logoImgs.reduce((s, l) => s + l.w, 0) + (logoImgs.length - 1) * gap;
       let startX = CANVAS_W / 2 - totalW / 2;
-      for (const logo of logoImages) {
+      for (const logo of logoImgs) {
         ctx.save();
         ctx.shadowColor = "#000";
         ctx.shadowBlur = 10;
@@ -355,11 +275,12 @@ const ResultFlyerGenerator = ({
       }
     }
 
+    // Bottom text
     ctx.save();
-    ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "700 18px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillStyle = WHITE_DIM;
-    ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 30);
+    ctx.fillStyle = "#8899bb";
+    ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 25);
     ctx.restore();
 
   }, [side, opponentLogoUrl, eventType, date, time, location, opponent, homeScore, awayScore, matchEntries, sponsors]);
@@ -429,17 +350,5 @@ const ResultFlyerGenerator = ({
     </div>
   );
 };
-
-function drawFitLogo(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: number, cy: number, size: number) {
-  const asp = img.width / img.height;
-  let dw = size, dh = size;
-  if (asp > 1) dh = size / asp; else dw = size * asp;
-  ctx.save();
-  ctx.shadowColor = "#000000";
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 10;
-  ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
-  ctx.restore();
-}
 
 export default ResultFlyerGenerator;
