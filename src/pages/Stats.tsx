@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from "react";
-import { Target, Handshake, SquareSlash, CircleX, ChevronDown, ChevronUp, Instagram } from "lucide-react";
-import { usePlayers, useSponsors } from "@/hooks/useSupabase";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { Target, Handshake, SquareSlash, CircleX, ChevronDown, ChevronUp, Instagram, CalendarCheck, ChevronLeft, ChevronRight, Check, X as XIcon } from "lucide-react";
+import { usePlayers, useSponsors, useEvents, useAllAttendance } from "@/hooks/useSupabase";
 import { useNavigate } from "react-router-dom";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
@@ -9,8 +9,6 @@ const CANVAS_H = 1350;
 const TEAM_LOGO_PATH = "/images/distrito-uniao-logo.png";
 
 const BG_BLACK = "#050a12";
-const BORDER_BLUE = "#0d1b3e";
-const BLUE_ACCENT = "#1a3a7a";
 const BLUE_GLOW = "#2563eb";
 const WHITE = "#ffffff";
 const WHITE_DIM = "#8899bb";
@@ -46,13 +44,84 @@ interface RankingEntry {
   secondary?: string;
 }
 
+const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+function getTrainingDaysInMonth(year: number, month: number): Date[] {
+  // Get all Mondays (1) and Thursdays (4) in the month
+  const days: Date[] = [];
+  const date = new Date(year, month, 1);
+  while (date.getMonth() === month) {
+    const dow = date.getDay();
+    if (dow === 1 || dow === 4) { // Monday or Thursday
+      days.push(new Date(date));
+    }
+    date.setDate(date.getDate() + 1);
+  }
+  return days;
+}
+
 const Stats = () => {
   const navigate = useNavigate();
   const { data: players = [] } = usePlayers();
   const { data: sponsors = [] } = useSponsors();
+  const { data: events = [] } = useEvents();
+  const { data: allAttendance = [] } = useAllAttendance();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ goals: true, assists: true, cards: true });
   const [exportType, setExportType] = useState<RankingType | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Training attendance state
+  const now = new Date();
+  const [trainingMonth, setTrainingMonth] = useState(now.getMonth());
+  const [trainingYear, setTrainingYear] = useState(now.getFullYear());
+  const [showTraining, setShowTraining] = useState(true);
+
+  const activePlayers = players.filter(p => p.status === "Ativo");
+
+  // Build training data
+  const trainingData = useMemo(() => {
+    const expectedDays = getTrainingDaysInMonth(trainingYear, trainingMonth);
+    
+    // Find training events that match those dates
+    const trainingEvents = events.filter(e => {
+      if (e.type !== "Treino") return false;
+      const eventDate = new Date(e.date + "T12:00:00");
+      return eventDate.getMonth() === trainingMonth && eventDate.getFullYear() === trainingYear;
+    });
+
+    // Map date string -> event id
+    const dateToEventId: Record<string, string> = {};
+    trainingEvents.forEach(e => {
+      dateToEventId[e.date] = e.id;
+    });
+
+    // Build attendance map: eventId -> { playerId -> status }
+    const attendanceMap: Record<string, Record<string, string>> = {};
+    allAttendance.forEach(a => {
+      if (!attendanceMap[a.event_id]) attendanceMap[a.event_id] = {};
+      attendanceMap[a.event_id][a.player_id] = a.status;
+    });
+
+    return { expectedDays, dateToEventId, attendanceMap };
+  }, [events, allAttendance, trainingMonth, trainingYear]);
+
+  const prevMonth = () => {
+    if (trainingMonth === 0) {
+      setTrainingMonth(11);
+      setTrainingYear(y => y - 1);
+    } else {
+      setTrainingMonth(m => m - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (trainingMonth === 11) {
+      setTrainingMonth(0);
+      setTrainingYear(y => y + 1);
+    } else {
+      setTrainingMonth(m => m + 1);
+    }
+  };
 
   const scorers = [...players].sort((a, b) => b.goals - a.goals).filter(p => p.goals > 0);
   const assisters = [...players].sort((a, b) => b.assists - a.assists).filter(p => p.assists > 0);
@@ -98,80 +167,63 @@ const Stats = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const { title, emoji, entries } = getRankingData(type);
+    const { title, entries } = getRankingData(type);
 
-    // Background
     ctx.fillStyle = BG_BLACK;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Blue side accents
     for (let i = 0; i < 8; i++) {
       ctx.save();
       ctx.globalAlpha = 0.12 - i * 0.012;
       const leftG = ctx.createLinearGradient(0, 0, 180, 0);
-      leftG.addColorStop(0, BLUE_GLOW);
-      leftG.addColorStop(1, "transparent");
+      leftG.addColorStop(0, BLUE_GLOW); leftG.addColorStop(1, "transparent");
       ctx.fillStyle = leftG;
       ctx.fillRect(0, i * (CANVAS_H / 8), 180, CANVAS_H / 8);
       const rightG = ctx.createLinearGradient(CANVAS_W, 0, CANVAS_W - 180, 0);
-      rightG.addColorStop(0, BLUE_GLOW);
-      rightG.addColorStop(1, "transparent");
+      rightG.addColorStop(0, BLUE_GLOW); rightG.addColorStop(1, "transparent");
       ctx.fillStyle = rightG;
       ctx.fillRect(CANVAS_W - 180, i * (CANVAS_H / 8), 180, CANVAS_H / 8);
       ctx.restore();
     }
 
-    // Center glow
     ctx.save();
     ctx.globalAlpha = 0.08;
     const cGlow = ctx.createRadialGradient(CANVAS_W / 2, 300, 50, CANVAS_W / 2, 300, 500);
-    cGlow.addColorStop(0, BLUE_GLOW);
-    cGlow.addColorStop(1, "transparent");
+    cGlow.addColorStop(0, BLUE_GLOW); cGlow.addColorStop(1, "transparent");
     ctx.fillStyle = cGlow;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.restore();
 
-    // Team logo
     try {
       const logo = await loadImage(TEAM_LOGO_PATH);
       const logoSize = 130;
       const asp = logo.width / logo.height;
       let dw = logoSize, dh = logoSize;
       if (asp > 1) dh = logoSize / asp; else dw = logoSize * asp;
-      ctx.save();
-      ctx.shadowColor = "#000";
-      ctx.shadowBlur = 25;
+      ctx.save(); ctx.shadowColor = "#000"; ctx.shadowBlur = 25;
       ctx.drawImage(logo, CANVAS_W / 2 - dw / 2, 50, dw, dh);
       ctx.restore();
     } catch {}
 
-    // Title
     ctx.save();
-    ctx.shadowColor = BLUE_GLOW + "60";
-    ctx.shadowBlur = 40;
+    ctx.shadowColor = BLUE_GLOW + "60"; ctx.shadowBlur = 40;
     ctx.fillStyle = WHITE;
     ctx.font = "900 72px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(title, CANVAS_W / 2, 260);
     ctx.restore();
 
-    // Subtitle
     ctx.save();
     ctx.font = "600 26px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillStyle = BLUE_GLOW;
+    ctx.textAlign = "center"; ctx.fillStyle = BLUE_GLOW;
     ctx.fillText("TEMPORADA 2026", CANVAS_W / 2, 305);
     ctx.restore();
 
-    // Separator
     const sepG = ctx.createLinearGradient(150, 0, CANVAS_W - 150, 0);
-    sepG.addColorStop(0, "transparent");
-    sepG.addColorStop(0.5, BLUE_GLOW + "60");
-    sepG.addColorStop(1, "transparent");
+    sepG.addColorStop(0, "transparent"); sepG.addColorStop(0.5, BLUE_GLOW + "60"); sepG.addColorStop(1, "transparent");
     ctx.fillStyle = sepG;
     ctx.fillRect(150, 330, CANVAS_W - 300, 2);
 
-    // Ranking entries
     const startY = 380;
     const rowH = 75;
     const maxEntries = Math.min(entries.length, 12);
@@ -180,105 +232,70 @@ const Stats = () => {
     for (let i = 0; i < maxEntries; i++) {
       const entry = entries[i];
       const y = startY + i * rowH;
-
-      // Row bg
       ctx.save();
       ctx.globalAlpha = i % 2 === 0 ? 0.06 : 0.02;
       ctx.fillStyle = WHITE;
       roundRect(ctx, mx, y, CANVAS_W - mx * 2, rowH - 8, 10);
-      ctx.fill();
-      ctx.restore();
+      ctx.fill(); ctx.restore();
 
-      // Position number
       const isTop3 = i < 3;
       ctx.save();
-      if (isTop3) {
-        ctx.fillStyle = i === 0 ? GOLD : i === 1 ? "#c0c0c0" : "#cd7f32";
-        ctx.font = "900 32px 'Segoe UI', Arial, sans-serif";
-      } else {
-        ctx.fillStyle = WHITE_DIM;
-        ctx.font = "700 24px 'Segoe UI', Arial, sans-serif";
-      }
+      if (isTop3) { ctx.fillStyle = i === 0 ? GOLD : i === 1 ? "#c0c0c0" : "#cd7f32"; ctx.font = "900 32px 'Segoe UI', Arial, sans-serif"; }
+      else { ctx.fillStyle = WHITE_DIM; ctx.font = "700 24px 'Segoe UI', Arial, sans-serif"; }
       ctx.textAlign = "center";
-      ctx.fillText(`${i + 1}`, mx + 35, y + 42);
-      ctx.restore();
+      ctx.fillText(`${i + 1}`, mx + 35, y + 42); ctx.restore();
 
-      // Player name
       ctx.save();
       ctx.font = isTop3 ? "800 28px 'Segoe UI', Arial, sans-serif" : "600 24px 'Segoe UI', Arial, sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillStyle = isTop3 ? WHITE : WHITE_DIM;
+      ctx.textAlign = "left"; ctx.fillStyle = isTop3 ? WHITE : WHITE_DIM;
       const name = entry.nickname || entry.name;
       const displayName = name.length > 20 ? name.substring(0, 19) + "…" : name;
-      ctx.fillText(displayName.toUpperCase(), mx + 80, y + 35);
-      ctx.restore();
+      ctx.fillText(displayName.toUpperCase(), mx + 80, y + 35); ctx.restore();
 
-      // Jersey number
       ctx.save();
       ctx.font = "500 16px 'Segoe UI', Arial, sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillStyle = BLUE_GLOW;
-      ctx.fillText(`#${entry.number}`, mx + 80, y + 56);
-      ctx.restore();
+      ctx.textAlign = "left"; ctx.fillStyle = BLUE_GLOW;
+      ctx.fillText(`#${entry.number}`, mx + 80, y + 56); ctx.restore();
 
-      // Value
       ctx.save();
       ctx.font = isTop3 ? "900 36px 'Segoe UI', Arial, sans-serif" : "700 28px 'Segoe UI', Arial, sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillStyle = isTop3 ? WHITE : WHITE_DIM;
-      const valueText = entry.secondary || `${entry.value}`;
-      ctx.fillText(valueText, CANVAS_W - mx - 20, y + 42);
-      ctx.restore();
+      ctx.textAlign = "right"; ctx.fillStyle = isTop3 ? WHITE : WHITE_DIM;
+      ctx.fillText(entry.secondary || `${entry.value}`, CANVAS_W - mx - 20, y + 42); ctx.restore();
     }
 
     if (entries.length === 0) {
       ctx.save();
       ctx.font = "500 28px 'Segoe UI', Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillStyle = WHITE_DIM;
+      ctx.textAlign = "center"; ctx.fillStyle = WHITE_DIM;
       ctx.fillText("Nenhum registro ainda", CANVAS_W / 2, startY + 60);
       ctx.restore();
     }
 
-    // Footer separator
     const footerY = CANVAS_H - 100;
     const fSep = ctx.createLinearGradient(150, 0, CANVAS_W - 150, 0);
-    fSep.addColorStop(0, "transparent");
-    fSep.addColorStop(0.5, BLUE_GLOW + "40");
-    fSep.addColorStop(1, "transparent");
+    fSep.addColorStop(0, "transparent"); fSep.addColorStop(0.5, BLUE_GLOW + "40"); fSep.addColorStop(1, "transparent");
     ctx.fillStyle = fSep;
     ctx.fillRect(150, footerY - 30, CANVAS_W - 300, 1);
 
-    // Sponsor logos
     const sponsorsWithLogo = (sponsors || []).filter((s: any) => s.logo_url);
     if (sponsorsWithLogo.length > 0) {
-      const maxLogoH = 50;
-      const gap = 30;
+      const maxLogoH = 50; const gap = 30;
       const logoImages: { img: HTMLImageElement; w: number; h: number }[] = [];
       for (const sponsor of sponsorsWithLogo) {
-        try {
-          const img = await loadImage(sponsor.logo_url!);
-          const asp = img.width / img.height;
-          logoImages.push({ img, w: maxLogoH * asp, h: maxLogoH });
-        } catch {}
+        try { const img = await loadImage(sponsor.logo_url!); const asp2 = img.width / img.height; logoImages.push({ img, w: maxLogoH * asp2, h: maxLogoH }); } catch {}
       }
       const totalW = logoImages.reduce((sum, l) => sum + l.w, 0) + (logoImages.length - 1) * gap;
       let startX = CANVAS_W / 2 - totalW / 2;
       for (const logo of logoImages) {
-        ctx.save();
-        ctx.shadowColor = "#000";
-        ctx.shadowBlur = 10;
+        ctx.save(); ctx.shadowColor = "#000"; ctx.shadowBlur = 10;
         ctx.drawImage(logo.img, startX, footerY - logo.h / 2, logo.w, logo.h);
-        ctx.restore();
-        startX += logo.w + gap;
+        ctx.restore(); startX += logo.w + gap;
       }
     }
 
-    // Footer text
     ctx.save();
     ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillStyle = WHITE_DIM;
+    ctx.textAlign = "center"; ctx.fillStyle = WHITE_DIM;
     ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 30);
     ctx.restore();
 
@@ -295,9 +312,7 @@ const Stats = () => {
   };
 
   const renderSection = (
-    key: string,
-    title: string,
-    icon: React.ReactNode,
+    key: string, title: string, icon: React.ReactNode,
     entries: { id: string; name: string; nickname: string; number: number; photo_url: string | null; goals?: number; assists?: number; yellow_cards?: number; red_cards?: number }[],
     type: RankingType,
     renderValue: (entry: any, i: number) => React.ReactNode,
@@ -344,6 +359,44 @@ const Stats = () => {
     </div>
   );
 
+  // Format date for display
+  const formatDay = (d: Date) => {
+    const day = d.getDate();
+    const dow = d.getDay();
+    return { day, label: dow === 1 ? "Seg" : "Qui" };
+  };
+
+  const { expectedDays, dateToEventId, attendanceMap } = trainingData;
+
+  // Calculate player attendance stats for the month
+  const playerTrainingStats = useMemo(() => {
+    return activePlayers.map(player => {
+      let present = 0;
+      let absent = 0;
+      let total = 0;
+      const dayStatuses: Record<string, string> = {};
+
+      expectedDays.forEach(d => {
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const eventId = dateToEventId[dateStr];
+        if (eventId && attendanceMap[eventId]) {
+          total++;
+          const status = attendanceMap[eventId][player.id];
+          dayStatuses[dateStr] = status || "sem_registro";
+          if (status === "presente") present++;
+          else if (status) absent++;
+        } else if (eventId) {
+          dayStatuses[dateStr] = "sem_registro";
+          total++;
+        } else {
+          dayStatuses[dateStr] = "sem_treino";
+        }
+      });
+
+      return { player, present, absent, total, dayStatuses };
+    }).sort((a, b) => b.present - a.present);
+  }, [activePlayers, expectedDays, dateToEventId, attendanceMap]);
+
   return (
     <div className="px-4 py-5 space-y-5 animate-fade-in pb-24">
       <h2 className="text-lg font-bold">Estatísticas da Temporada</h2>
@@ -369,6 +422,87 @@ const Stats = () => {
           <p className="text-lg font-bold">{totalReds}</p>
           <p className="text-[10px] text-muted-foreground">Vermelhos</p>
         </div>
+      </div>
+
+      {/* Training Attendance Section */}
+      <div className="card-elevated">
+        <button onClick={() => setShowTraining(prev => !prev)} className="w-full flex items-center justify-between mb-1">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <CalendarCheck size={14} className="text-primary" /> Presença nos Treinos
+          </h4>
+          {showTraining ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+        </button>
+
+        {showTraining && (
+          <div className="mt-3 space-y-3">
+            {/* Month selector */}
+            <div className="flex items-center justify-between">
+              <button onClick={prevMonth} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm font-semibold">{MONTH_NAMES[trainingMonth]} {trainingYear}</span>
+              <button onClick={nextMonth} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto -mx-4 px-4">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 pr-2 text-muted-foreground font-semibold sticky left-0 bg-card z-10 min-w-[120px]">Atleta</th>
+                    {expectedDays.map(d => {
+                      const { day, label } = formatDay(d);
+                      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      const hasEvent = !!dateToEventId[dateStr];
+                      return (
+                        <th key={dateStr} className={`text-center py-2 px-1 min-w-[36px] ${hasEvent ? "text-foreground" : "text-muted-foreground/40"}`}>
+                          <div className="text-[9px]">{label}</div>
+                          <div className="font-bold">{day}</div>
+                        </th>
+                      );
+                    })}
+                    <th className="text-center py-2 px-2 text-muted-foreground font-semibold min-w-[36px]">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {playerTrainingStats.map(({ player, present, total, dayStatuses }) => (
+                    <tr key={player.id} className="border-b border-border/50 hover:bg-secondary/30">
+                      <td className="py-2 pr-2 sticky left-0 bg-card z-10">
+                        <div className="flex items-center gap-2">
+                          <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
+                          <span className="font-medium truncate max-w-[80px]">{player.nickname || player.name}</span>
+                        </div>
+                      </td>
+                      {expectedDays.map(d => {
+                        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        const status = dayStatuses[dateStr];
+                        return (
+                          <td key={dateStr} className="text-center py-2 px-1">
+                            {status === "presente" && <Check size={14} className="mx-auto text-success" />}
+                            {(status === "falta" || status === "falta_justificada") && <XIcon size={14} className="mx-auto text-destructive" />}
+                            {status === "sem_registro" && <span className="text-muted-foreground/30">—</span>}
+                            {status === "sem_treino" && <span className="text-muted-foreground/20">·</span>}
+                          </td>
+                        );
+                      })}
+                      <td className="text-center py-2 px-2">
+                        <span className={`font-bold ${total > 0 ? (present / total >= 0.75 ? "text-success" : present / total >= 0.5 ? "text-warning" : "text-destructive") : "text-muted-foreground"}`}>
+                          {total > 0 ? Math.round((present / total) * 100) : 0}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {expectedDays.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">Nenhum dia de treino neste mês.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {renderSection(
@@ -401,10 +535,8 @@ const Stats = () => {
         ),
       )}
 
-      {/* Hidden canvas for generation (only visible when no modal) */}
       {!exportType && <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} className="hidden" />}
 
-      {/* Export modal */}
       {exportType && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-card rounded-2xl max-h-[95vh] overflow-y-auto">
