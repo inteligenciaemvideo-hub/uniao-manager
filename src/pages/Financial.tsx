@@ -186,7 +186,7 @@ const Financial = () => {
             <FileDown size={16} className="text-red-500 bg-primary-foreground" />
           </button>
           <button onClick={exportXLSX} className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" title="Exportar Excel">
-            <FileSpreadsheet size={16} className="text-success-foreground" />
+            <FileSpreadsheet size={16} className="text-success-foreground bg-success-foreground" />
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
