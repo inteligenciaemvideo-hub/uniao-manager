@@ -185,7 +185,7 @@ const Financial = () => {
           <button onClick={exportPDF} className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" title="Exportar PDF">
             <FileDown size={16} className="text-red-500 bg-primary-foreground" />
           </button>
-          <button onClick={exportXLSX} className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" title="Exportar Excel">
+          <button onClick={exportXLSX} className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors bg-success text-destructive-foreground" title="Exportar Excel">
             <FileSpreadsheet size={16} className="text-success-foreground bg-success-foreground" />
           </button>
           <DropdownMenu>
