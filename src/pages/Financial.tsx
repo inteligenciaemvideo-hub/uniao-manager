@@ -31,23 +31,23 @@ const Financial = () => {
   const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
   const [formPlayerId, setFormPlayerId] = useState<string>("");
 
-  const activePlayers = players.filter(p => p.status === "Ativo");
+  const activePlayers = players.filter((p) => p.status === "Ativo");
 
-  const totalIn = financials.filter(f => f.type === "entrada").reduce((s, f) => s + Number(f.amount), 0);
-  const totalOut = financials.filter(f => f.type === "saida").reduce((s, f) => s + Number(f.amount), 0);
+  const totalIn = financials.filter((f) => f.type === "entrada").reduce((s, f) => s + Number(f.amount), 0);
+  const totalOut = financials.filter((f) => f.type === "saida").reduce((s, f) => s + Number(f.amount), 0);
   const balance = totalIn - totalOut;
 
   const filtered = tab === "todos" ? financials :
-    tab === "mensalidades" ? [] :
-    financials.filter(f => tab === "entradas" ? f.type === "entrada" : f.type === "saida");
+  tab === "mensalidades" ? [] :
+  financials.filter((f) => tab === "entradas" ? f.type === "entrada" : f.type === "saida");
 
   const getPaymentStatus = (playerId: string, month: string) => {
-    const p = payments.find(pay => pay.player_id === playerId && pay.month === month);
+    const p = payments.find((pay) => pay.player_id === playerId && pay.month === month);
     return p ? p.paid : undefined;
   };
 
   const getPendingMonths = (playerId: string) =>
-    payments.filter(p => p.player_id === playerId && !p.paid).length;
+  payments.filter((p) => p.player_id === playerId && !p.paid).length;
 
   const openForm = (type: "entrada" | "saida") => {
     setFormType(type);
@@ -71,7 +71,7 @@ const Financial = () => {
         amount: parseFloat(formAmount),
         category: formCategory,
         date: formDate,
-        player_id: formPlayerId || undefined,
+        player_id: formPlayerId || undefined
       });
       toast({ title: formType === "entrada" ? "Entrada registrada!" : "Saída registrada!" });
       setDialogOpen(false);
@@ -101,7 +101,7 @@ const Financial = () => {
 
     const sorted = [...financials].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     for (const entry of sorted) {
-      if (y > 280) { doc.addPage(); y = 20; }
+      if (y > 280) {doc.addPage();y = 20;}
       doc.text(new Date(entry.date).toLocaleDateString("pt-BR"), 14, y);
       doc.text(entry.type === "entrada" ? "Entrada" : "Saída", 44, y);
       doc.text(entry.category, 70, y);
@@ -112,7 +112,7 @@ const Financial = () => {
 
     if (payments.length > 0) {
       y += 10;
-      if (y > 260) { doc.addPage(); y = 20; }
+      if (y > 260) {doc.addPage();y = 20;}
       doc.setFontSize(12);
       doc.text("Mensalidades", 14, y);
       y += 8;
@@ -121,7 +121,7 @@ const Financial = () => {
       months.forEach((m, i) => doc.text(m, 60 + i * 20, y));
       y += 6;
       for (const player of activePlayers) {
-        if (y > 280) { doc.addPage(); y = 20; }
+        if (y > 280) {doc.addPage();y = 20;}
         doc.text(player.nickname.substring(0, 15), 14, y);
         months.forEach((month, i) => {
           const paid = getPaymentStatus(player.id, month);
@@ -139,22 +139,22 @@ const Financial = () => {
     const wb = XLSX.utils.book_new();
 
     // Lançamentos sheet
-    const launchData = [...financials]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .map(e => ({
-        Data: new Date(e.date).toLocaleDateString("pt-BR"),
-        Tipo: e.type === "entrada" ? "Entrada" : "Saída",
-        Categoria: e.category,
-        Descrição: e.description,
-        Valor: Number(e.amount),
-      }));
+    const launchData = [...financials].
+    sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).
+    map((e) => ({
+      Data: new Date(e.date).toLocaleDateString("pt-BR"),
+      Tipo: e.type === "entrada" ? "Entrada" : "Saída",
+      Categoria: e.category,
+      Descrição: e.description,
+      Valor: Number(e.amount)
+    }));
     const ws1 = XLSX.utils.json_to_sheet(launchData);
     XLSX.utils.book_append_sheet(wb, ws1, "Lançamentos");
 
     // Mensalidades sheet
-    const payData = activePlayers.map(player => {
+    const payData = activePlayers.map((player) => {
       const row: Record<string, string> = { Atleta: player.nickname };
-      months.forEach(month => {
+      months.forEach((month) => {
         const paid = getPaymentStatus(player.id, month);
         row[month] = paid === undefined ? "—" : paid ? "Pago" : "Pendente";
       });
@@ -165,10 +165,10 @@ const Financial = () => {
 
     // Resumo sheet
     const ws3 = XLSX.utils.json_to_sheet([
-      { Item: "Total Entradas", Valor: totalIn },
-      { Item: "Total Saídas", Valor: totalOut },
-      { Item: "Saldo", Valor: balance },
-    ]);
+    { Item: "Total Entradas", Valor: totalIn },
+    { Item: "Total Saídas", Valor: totalOut },
+    { Item: "Saldo", Valor: balance }]
+    );
     XLSX.utils.book_append_sheet(wb, ws3, "Resumo");
 
     XLSX.writeFile(wb, "financeiro.xlsx");
@@ -186,7 +186,7 @@ const Financial = () => {
             <FileDown size={16} />
           </button>
           <button onClick={exportXLSX} className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" title="Exportar Excel">
-            <FileSpreadsheet size={16} />
+            <FileSpreadsheet size={16} className="text-success-foreground" />
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -225,29 +225,29 @@ const Financial = () => {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {(["mensalidades", "todos", "entradas", "saidas"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-colors ${tab === t ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+        {(["mensalidades", "todos", "entradas", "saidas"] as const).map((t) =>
+        <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-colors ${tab === t ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
             {t === "saidas" ? "Saídas" : t === "mensalidades" ? "Mensalidades" : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
-        ))}
+        )}
       </div>
 
-      {tab === "mensalidades" && (
-        <div className="card-elevated overflow-hidden">
+      {tab === "mensalidades" &&
+      <div className="card-elevated overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 px-2 text-muted-foreground font-medium">Atleta</th>
-                  {months.map(m => <th key={m} className="text-center py-2 px-1 text-muted-foreground font-medium">{m}</th>)}
+                  {months.map((m) => <th key={m} className="text-center py-2 px-1 text-muted-foreground font-medium">{m}</th>)}
                   <th className="text-center py-2 px-2 text-muted-foreground font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {activePlayers.map(player => {
-                  const pending = getPendingMonths(player.id);
-                  return (
-                    <tr key={player.id} className="border-b border-border/50 last:border-0">
+                {activePlayers.map((player) => {
+                const pending = getPendingMonths(player.id);
+                return (
+                  <tr key={player.id} className="border-b border-border/50 last:border-0">
                       <td className="py-2.5 px-2">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold shrink-0">
@@ -256,39 +256,39 @@ const Financial = () => {
                           <span className="font-medium truncate max-w-[80px]">{player.nickname}</span>
                         </div>
                       </td>
-                      {months.map(month => {
-                        const paid = getPaymentStatus(player.id, month);
-                        return (
-                          <td key={month} className="text-center py-2.5 px-1">
+                      {months.map((month) => {
+                      const paid = getPaymentStatus(player.id, month);
+                      return (
+                        <td key={month} className="text-center py-2.5 px-1">
                             <button
-                              onClick={() => upsertPayment.mutate({ player_id: player.id, month, paid: paid === undefined ? true : !paid })}
-                              className="w-full flex items-center justify-center hover:scale-110 transition-transform"
-                              title={paid === undefined ? "Marcar como pago" : paid ? "Marcar como pendente" : "Marcar como pago"}
-                            >
+                            onClick={() => upsertPayment.mutate({ player_id: player.id, month, paid: paid === undefined ? true : !paid })}
+                            className="w-full flex items-center justify-center hover:scale-110 transition-transform"
+                            title={paid === undefined ? "Marcar como pago" : paid ? "Marcar como pendente" : "Marcar como pago"}>
+                            
                               {paid === undefined ? <span className="text-muted-foreground">—</span> : paid ? <CheckCircle2 size={16} className="mx-auto text-success" /> : <XCircle size={16} className="mx-auto text-destructive" />}
                             </button>
-                          </td>
-                        );
-                      })}
+                          </td>);
+
+                    })}
                       <td className="text-center py-2.5 px-2">
                         {pending === 0 ? <span className="badge-ok text-[9px]">OK</span> : <span className="badge-pending text-[9px]">{pending}</span>}
                       </td>
-                    </tr>
-                  );
-                })}
+                    </tr>);
+
+              })}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+      }
 
-      {tab !== "mensalidades" && (
-        <div className="space-y-2">
-          {filtered.length === 0 && (
-            <p className="text-center text-muted-foreground text-sm py-8">Nenhum lançamento encontrado</p>
-          )}
-          {filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(entry => (
-            <div key={entry.id} className="card-elevated flex items-center justify-between">
+      {tab !== "mensalidades" &&
+      <div className="space-y-2">
+          {filtered.length === 0 &&
+        <p className="text-center text-muted-foreground text-sm py-8">Nenhum lançamento encontrado</p>
+        }
+          {filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((entry) =>
+        <div key={entry.id} className="card-elevated flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${entry.type === "entrada" ? "bg-success/20" : "bg-destructive/20"}`}>
                   {entry.type === "entrada" ? <TrendingUp size={14} className="text-success" /> : <TrendingDown size={14} className="text-destructive" />}
@@ -302,9 +302,9 @@ const Financial = () => {
                 {entry.type === "entrada" ? "+" : "-"}R$ {Number(entry.amount).toFixed(2)}
               </span>
             </div>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* Dialog para novo lançamento */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -316,34 +316,34 @@ const Financial = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
-            <Input placeholder="Descrição *" value={formDesc} onChange={e => setFormDesc(e.target.value)} />
-            <Input type="number" placeholder="Valor (R$) *" value={formAmount} onChange={e => setFormAmount(e.target.value)} min="0" step="0.01" />
+            <Input placeholder="Descrição *" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} />
+            <Input type="number" placeholder="Valor (R$) *" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} min="0" step="0.01" />
             <Select value={formCategory} onValueChange={setFormCategory}>
               <SelectTrigger><SelectValue placeholder="Categoria *" /></SelectTrigger>
               <SelectContent>
-                {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
+            <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
             <Select value={formPlayerId} onValueChange={setFormPlayerId}>
               <SelectTrigger><SelectValue placeholder="Atleta (opcional)" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Nenhum</SelectItem>
-                {activePlayers.map(p => <SelectItem key={p.id} value={p.id}>{p.nickname}</SelectItem>)}
+                {activePlayers.map((p) => <SelectItem key={p.id} value={p.id}>{p.nickname}</SelectItem>)}
               </SelectContent>
             </Select>
             <button
               onClick={handleSubmit}
               disabled={addFinancial.isPending}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm disabled:opacity-50"
-            >
+              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm disabled:opacity-50">
+              
               {addFinancial.isPending ? "Salvando..." : "Salvar"}
             </button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Financial;
