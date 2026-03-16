@@ -99,7 +99,7 @@ const FlyerGenerator = ({
     if (!ctx) return;
 
     // ============ BACKGROUND - SOLID BLACK ============
-    ctx.fillStyle = "#030810";
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Blue vertical stripe accents on edges (matching ref image 1)
