@@ -834,6 +834,7 @@ const EventDetail = () => {
             return { player_id: e.player_id, player_name: player?.name || "?", type: e.type };
           })}
           sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
+          teamLogoUrl={teamSettings?.team_logo_url}
         />
       )}
     </div>
