@@ -442,7 +442,6 @@ const Stats = () => {
             {showTraining ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
           </div>
         </button>
-        </button>
 
         {showTraining && (
           <div className="mt-3 space-y-3">
