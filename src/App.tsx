@@ -44,6 +44,8 @@ const ProtectedRoutes = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  const isAdmin = role === "admin";
+
   return (
     <Routes>
       <Route element={<AppLayout />}>
