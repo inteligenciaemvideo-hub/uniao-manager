@@ -281,7 +281,7 @@ const FlyerGenerator = ({
     ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 25);
     ctx.restore();
 
-  }, [side, oppLogo, eventType, date, time, location, opponent, sponsors]);
+  }, [side, oppLogo, teamLogo, bgColor, eventType, date, time, location, opponent, sponsors]);
 
   useEffect(() => {
     if (open) drawFlyer();
