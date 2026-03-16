@@ -472,7 +472,7 @@ const Stats = () => {
                       <td className="py-2 pr-2 sticky left-0 bg-card z-10">
                         <div className="flex items-center gap-2">
                           <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
-                          <span className="font-medium truncate max-w-[80px]">{player.nickname || player.name}</span>
+                          <span className="font-medium truncate max-w-[80px]">{player.name}</span>
                         </div>
                       </td>
                       {expectedDays.map(d => {
