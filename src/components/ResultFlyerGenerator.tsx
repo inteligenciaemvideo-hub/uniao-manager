@@ -87,12 +87,8 @@ const ResultFlyerGenerator = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // ============ BACKGROUND - BLUE (matching ref image 2) ============
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-    bgGrad.addColorStop(0, "#1a3f7a");
-    bgGrad.addColorStop(0.5, "#163670");
-    bgGrad.addColorStop(1, "#0e2550");
-    ctx.fillStyle = bgGrad;
+    // ============ BACKGROUND ============
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Subtle hexagon/geometric pattern overlay
