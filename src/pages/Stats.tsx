@@ -431,7 +431,17 @@ const Stats = () => {
           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <CalendarCheck size={14} className="text-primary" /> Presença nos Treinos
           </h4>
-          {showTraining ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); exportAttendanceXLSX(); }}
+              className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
+              title="Exportar para Excel"
+            >
+              <Download size={14} />
+            </button>
+            {showTraining ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          </div>
+        </button>
         </button>
 
         {showTraining && (
