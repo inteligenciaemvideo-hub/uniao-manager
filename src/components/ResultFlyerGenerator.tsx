@@ -63,10 +63,20 @@ function drawFitLogo(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: n
 
 const ResultFlyerGenerator = ({
   open, onClose, eventType, opponent, date, time, location,
-  opponentLogoUrl, homeScore, awayScore, matchEntries, sponsors = [],
+  opponentLogoUrl, homeScore, awayScore, matchEntries, sponsors = [], teamLogoUrl,
 }: ResultFlyerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [side, setSide] = useState<"home" | "away">("home");
+  const [bgColor, setBgColor] = useState("#1a3f7a");
+  const [teamLogoFile, setTeamLogoFile] = useState<string | null>(null);
+  const teamLogoInputRef = useRef<HTMLInputElement>(null);
+
+  const teamLogo = teamLogoFile || teamLogoUrl || TEAM_LOGO_PATH;
+
+  const handleTeamLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setTeamLogoFile(URL.createObjectURL(file));
+  };
 
   const goals = matchEntries.filter(e => e.type === "goal");
   const assists = matchEntries.filter(e => e.type === "assist");
