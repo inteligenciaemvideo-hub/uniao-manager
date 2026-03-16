@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
-import { Target, Handshake, SquareSlash, CircleX, ChevronDown, ChevronUp, Instagram, CalendarCheck, ChevronLeft, ChevronRight, Check, X as XIcon } from "lucide-react";
+import { Target, Handshake, SquareSlash, CircleX, ChevronDown, ChevronUp, Instagram, CalendarCheck, ChevronLeft, ChevronRight, Check, X as XIcon, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { usePlayers, useSponsors, useEvents, useAllAttendance } from "@/hooks/useSupabase";
 import { useNavigate } from "react-router-dom";
 import PlayerAvatar from "@/components/PlayerAvatar";

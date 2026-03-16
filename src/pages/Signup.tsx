@@ -88,10 +88,10 @@ const Signup = () => {
           <CheckCircle2 size={48} className="mx-auto text-[hsl(var(--success))]" />
           <h1 className="text-xl font-bold text-foreground">Cadastro realizado!</h1>
           <p className="text-sm text-muted-foreground">
-            Verifique seu email para confirmar a conta. Após confirmar, um administrador precisará aprovar seu acesso.
+            Sua conta foi criada com sucesso! Você já pode fazer login.
           </p>
           <Link to="/login">
-            <Button variant="outline" className="mt-4">Voltar ao login</Button>
+            <Button variant="outline" className="mt-4">Ir para o login</Button>
           </Link>
         </div>
       </div>
