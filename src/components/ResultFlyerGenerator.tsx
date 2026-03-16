@@ -163,7 +163,7 @@ const ResultFlyerGenerator = ({
 
     // Our team logo
     try {
-      const teamImg = await loadImage(TEAM_LOGO_PATH);
+      const teamImg = await loadImage(teamLogo);
       drawFitLogo(ctx, teamImg, ourCx, scoreY, logoSize);
     } catch {}
 
