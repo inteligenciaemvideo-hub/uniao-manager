@@ -85,6 +85,13 @@ const FlyerGenerator = ({
     if (file) setOpponentLogoFile(URL.createObjectURL(file));
   };
 
+  const handleTeamLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setTeamLogoFile(URL.createObjectURL(file));
+  };
+
+  const teamLogo = teamLogoFile || teamLogoUrl || TEAM_LOGO_PATH;
+
   const drawFlyer = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
