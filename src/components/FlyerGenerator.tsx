@@ -58,14 +58,25 @@ function drawFitLogo(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: n
   ctx.restore();
 }
 
+const BG_COLORS = [
+  { label: "Preto", value: "#030810" },
+  { label: "Azul Escuro", value: "#0a1e40" },
+  { label: "Azul Marinho", value: "#1a3f7a" },
+  { label: "Verde Escuro", value: "#0a3a1a" },
+  { label: "Vinho", value: "#3a0a1e" },
+];
+
 const FlyerGenerator = ({
   open, onClose, eventType, opponent, date, time, location,
-  opponentLogoUrl, sponsors = [],
+  opponentLogoUrl, sponsors = [], teamLogoUrl,
 }: FlyerGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [side, setSide] = useState<MatchSide>("home");
   const [opponentLogoFile, setOpponentLogoFile] = useState<string | null>(null);
+  const [teamLogoFile, setTeamLogoFile] = useState<string | null>(null);
+  const [bgColor, setBgColor] = useState("#030810");
   const oppLogoInputRef = useRef<HTMLInputElement>(null);
+  const teamLogoInputRef = useRef<HTMLInputElement>(null);
 
   const oppLogo = opponentLogoFile || opponentLogoUrl || null;
 
