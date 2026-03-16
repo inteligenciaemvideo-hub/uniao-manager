@@ -333,6 +333,38 @@ const FlyerGenerator = ({
             </button>
           </div>
 
+          {/* Background color */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Cor de fundo</label>
+            <div className="flex gap-2">
+              {BG_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  onClick={() => setBgColor(c.value)}
+                  className={`w-10 h-10 rounded-lg border-2 transition-all ${bgColor === c.value ? "border-primary scale-110" : "border-border"}`}
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Team logo upload */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Logo do time</label>
+            <button
+              onClick={() => teamLogoInputRef.current?.click()}
+              className="w-full h-20 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center gap-2 overflow-hidden hover:border-primary/40 transition-colors"
+            >
+              {teamLogo !== TEAM_LOGO_PATH ? (
+                <img src={teamLogo} alt="Logo do time" className="h-16 w-16 object-contain" />
+              ) : (
+                <><img src={TEAM_LOGO_PATH} alt="Logo padrão" className="h-12 w-12 object-contain opacity-60" /><span className="text-xs text-muted-foreground">Trocar logo</span></>
+              )}
+            </button>
+            <input ref={teamLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleTeamLogoUpload} />
+          </div>
+
           {/* Opponent logo upload */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Logo do adversário (PNG transparente recomendado)</label>
