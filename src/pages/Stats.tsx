@@ -398,6 +398,26 @@ const Stats = () => {
     }).sort((a, b) => b.present - a.present);
   }, [activePlayers, expectedDays, dateToEventId, attendanceMap]);
 
+  const exportAttendanceXLSX = useCallback(() => {
+    const rows: any[] = [];
+    playerTrainingStats.forEach(({ player, present, total, dayStatuses }) => {
+      const row: any = { "Nome": player.name, "Posição": (player.positions || []).join(", "), "#": player.number };
+      expectedDays.forEach(d => {
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const status = dayStatuses[dateStr];
+        row[`${d.getDate()}/${d.getMonth() + 1}`] = status === "presente" ? "✓" : status === "falta" || status === "falta_justificada" ? "✗" : "—";
+      });
+      row["Presenças"] = present;
+      row["Total"] = total;
+      row["%"] = total > 0 ? `${Math.round((present / total) * 100)}%` : "0%";
+      rows.push(row);
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `${MONTH_NAMES[trainingMonth]} ${trainingYear}`);
+    XLSX.writeFile(wb, `presenca_treinos_${MONTH_NAMES[trainingMonth]}_${trainingYear}.xlsx`);
+  }, [playerTrainingStats, expectedDays, trainingMonth, trainingYear]);
+
   return (
     <div className="px-4 py-5 space-y-5 animate-fade-in pb-24">
       <h2 className="text-lg font-bold">Estatísticas da Temporada</h2>
