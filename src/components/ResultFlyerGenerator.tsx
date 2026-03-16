@@ -26,7 +26,16 @@ interface ResultFlyerProps {
   awayScore: number;
   matchEntries: MatchEntry[];
   sponsors?: Sponsor[];
+  teamLogoUrl?: string | null;
 }
+
+const BG_COLORS = [
+  { label: "Azul Escuro", value: "#1a3f7a" },
+  { label: "Preto", value: "#030810" },
+  { label: "Azul Marinho", value: "#0a1e40" },
+  { label: "Verde Escuro", value: "#0a3a1a" },
+  { label: "Vinho", value: "#3a0a1e" },
+];
 
 const CANVAS_W = 1080;
 const CANVAS_H = 1350;
@@ -54,10 +63,20 @@ function drawFitLogo(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: n
 
 const ResultFlyerGenerator = ({
   open, onClose, eventType, opponent, date, time, location,
-  opponentLogoUrl, homeScore, awayScore, matchEntries, sponsors = [],
+  opponentLogoUrl, homeScore, awayScore, matchEntries, sponsors = [], teamLogoUrl,
 }: ResultFlyerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [side, setSide] = useState<"home" | "away">("home");
+  const [bgColor, setBgColor] = useState("#1a3f7a");
+  const [teamLogoFile, setTeamLogoFile] = useState<string | null>(null);
+  const teamLogoInputRef = useRef<HTMLInputElement>(null);
+
+  const teamLogo = teamLogoFile || teamLogoUrl || TEAM_LOGO_PATH;
+
+  const handleTeamLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setTeamLogoFile(URL.createObjectURL(file));
+  };
 
   const goals = matchEntries.filter(e => e.type === "goal");
   const assists = matchEntries.filter(e => e.type === "assist");
@@ -68,12 +87,8 @@ const ResultFlyerGenerator = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // ============ BACKGROUND - BLUE (matching ref image 2) ============
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-    bgGrad.addColorStop(0, "#1a3f7a");
-    bgGrad.addColorStop(0.5, "#163670");
-    bgGrad.addColorStop(1, "#0e2550");
-    ctx.fillStyle = bgGrad;
+    // ============ BACKGROUND ============
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Subtle hexagon/geometric pattern overlay
@@ -148,7 +163,7 @@ const ResultFlyerGenerator = ({
 
     // Our team logo
     try {
-      const teamImg = await loadImage(TEAM_LOGO_PATH);
+      const teamImg = await loadImage(teamLogo);
       drawFitLogo(ctx, teamImg, ourCx, scoreY, logoSize);
     } catch {}
 
@@ -283,7 +298,7 @@ const ResultFlyerGenerator = ({
     ctx.fillText("DISTRITO UNIÃO FC  •  A REVOLUÇÃO", CANVAS_W / 2, CANVAS_H - 25);
     ctx.restore();
 
-  }, [side, opponentLogoUrl, eventType, date, time, location, opponent, homeScore, awayScore, matchEntries, sponsors]);
+  }, [side, opponentLogoUrl, teamLogo, bgColor, eventType, date, time, location, opponent, homeScore, awayScore, matchEntries, sponsors]);
 
   useEffect(() => {
     if (open) drawFlyer();
@@ -332,6 +347,35 @@ const ResultFlyerGenerator = ({
             >
               <Plane size={16} /> Fora
             </button>
+          </div>
+
+          {/* Background color */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Cor de fundo</label>
+            <div className="flex gap-2">
+              {BG_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  onClick={() => setBgColor(c.value)}
+                  className={`w-10 h-10 rounded-lg border-2 transition-all ${bgColor === c.value ? "border-primary scale-110" : "border-border"}`}
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Team logo upload */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Logo do time</label>
+            <button
+              onClick={() => teamLogoInputRef.current?.click()}
+              className="w-full h-16 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center gap-2 overflow-hidden hover:border-primary/40 transition-colors"
+            >
+              <img src={teamLogo} alt="Logo" className="h-12 w-12 object-contain" />
+              <span className="text-xs text-muted-foreground">Trocar logo</span>
+            </button>
+            <input ref={teamLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleTeamLogoUpload} />
           </div>
 
           <div className="rounded-xl overflow-hidden border border-border">

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
-import { Target, Handshake, SquareSlash, CircleX, ChevronDown, ChevronUp, Instagram, CalendarCheck, ChevronLeft, ChevronRight, Check, X as XIcon } from "lucide-react";
+import { Target, Handshake, SquareSlash, CircleX, ChevronDown, ChevronUp, Instagram, CalendarCheck, ChevronLeft, ChevronRight, Check, X as XIcon, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { usePlayers, useSponsors, useEvents, useAllAttendance } from "@/hooks/useSupabase";
 import { useNavigate } from "react-router-dom";
 import PlayerAvatar from "@/components/PlayerAvatar";
@@ -397,6 +398,26 @@ const Stats = () => {
     }).sort((a, b) => b.present - a.present);
   }, [activePlayers, expectedDays, dateToEventId, attendanceMap]);
 
+  const exportAttendanceXLSX = useCallback(() => {
+    const rows: any[] = [];
+    playerTrainingStats.forEach(({ player, present, total, dayStatuses }) => {
+      const row: any = { "Nome": player.name, "Posição": (player.positions || []).join(", "), "#": player.number };
+      expectedDays.forEach(d => {
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const status = dayStatuses[dateStr];
+        row[`${d.getDate()}/${d.getMonth() + 1}`] = status === "presente" ? "✓" : status === "falta" || status === "falta_justificada" ? "✗" : "—";
+      });
+      row["Presenças"] = present;
+      row["Total"] = total;
+      row["%"] = total > 0 ? `${Math.round((present / total) * 100)}%` : "0%";
+      rows.push(row);
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `${MONTH_NAMES[trainingMonth]} ${trainingYear}`);
+    XLSX.writeFile(wb, `presenca_treinos_${MONTH_NAMES[trainingMonth]}_${trainingYear}.xlsx`);
+  }, [playerTrainingStats, expectedDays, trainingMonth, trainingYear]);
+
   return (
     <div className="px-4 py-5 space-y-5 animate-fade-in pb-24">
       <h2 className="text-lg font-bold">Estatísticas da Temporada</h2>
@@ -430,7 +451,16 @@ const Stats = () => {
           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <CalendarCheck size={14} className="text-primary" /> Presença nos Treinos
           </h4>
-          {showTraining ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); exportAttendanceXLSX(); }}
+              className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
+              title="Exportar para Excel"
+            >
+              <Download size={14} />
+            </button>
+            {showTraining ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          </div>
         </button>
 
         {showTraining && (
@@ -472,7 +502,7 @@ const Stats = () => {
                       <td className="py-2 pr-2 sticky left-0 bg-card z-10">
                         <div className="flex items-center gap-2">
                           <PlayerAvatar playerId={player.id} nickname={player.nickname} photoUrl={player.photo_url || undefined} size="sm" />
-                          <span className="font-medium truncate max-w-[80px]">{player.nickname || player.name}</span>
+                          <span className="font-medium truncate max-w-[80px]">{player.name}</span>
                         </div>
                       </td>
                       {expectedDays.map(d => {

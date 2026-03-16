@@ -388,22 +388,21 @@ const EventDetail = () => {
           <CalendarCheck size={16} />Fazer Chamada
         </button>
 
-        {/* Sponsor Selector for Flyers */}
+        {/* Sponsor Selector for Flyers - ALWAYS visible */}
+        <button
+          onClick={() => setShowSponsorSelector(true)}
+          className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm flex items-center justify-center gap-2 border-2 border-primary/40"
+        >
+          <Handshake size={16} />
+          {selectedSponsorIds.length > 0
+            ? `✓ ${selectedSponsorIds.length} patrocinador(es) selecionado(s)`
+            : "Selecionar Patrocinadores p/ Flyers"}
+        </button>
+
         {event.opponent && (
-          <div className="space-y-2">
-            <button
-              onClick={() => setShowSponsorSelector(true)}
-              className="w-full py-2.5 rounded-xl bg-secondary text-foreground font-semibold text-xs flex items-center justify-center gap-2 border border-border"
-            >
-              <Handshake size={14} />
-              {selectedSponsorIds.length > 0
-                ? `${selectedSponsorIds.length} patrocinador(es) selecionado(s)`
-                : "Selecionar Patrocinadores p/ Flyers"}
-            </button>
-            <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
-              <ImageIcon size={16} />Gerar Flyer do Jogo
-            </button>
-          </div>
+          <button onClick={() => setShowFlyer(true)} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
+            <ImageIcon size={16} />Gerar Flyer do Jogo
+          </button>
         )}
 
         {/* PDF & Instagram buttons - only after convocation confirmed */}
@@ -665,6 +664,7 @@ const EventDetail = () => {
           homeScore={(event as any).home_score}
           awayScore={(event as any).away_score}
           sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
+          teamLogoUrl={teamSettings?.team_logo_url}
         />
       )}
 
@@ -834,6 +834,7 @@ const EventDetail = () => {
             return { player_id: e.player_id, player_name: player?.name || "?", type: e.type };
           })}
           sponsors={selectedSponsorIds.length > 0 ? sponsors.filter((s: any) => selectedSponsorIds.includes(s.id)) : sponsors}
+          teamLogoUrl={teamSettings?.team_logo_url}
         />
       )}
     </div>

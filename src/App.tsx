@@ -43,10 +43,8 @@ const ProtectedRoutes = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  
-  // Admins are always approved
+
   const isAdmin = role === "admin";
-  if (!isAdmin && !profile?.approved) return <PendingApproval />;
 
   return (
     <Routes>
