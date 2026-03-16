@@ -26,7 +26,16 @@ interface ResultFlyerProps {
   awayScore: number;
   matchEntries: MatchEntry[];
   sponsors?: Sponsor[];
+  teamLogoUrl?: string | null;
 }
+
+const BG_COLORS = [
+  { label: "Azul Escuro", value: "#1a3f7a" },
+  { label: "Preto", value: "#030810" },
+  { label: "Azul Marinho", value: "#0a1e40" },
+  { label: "Verde Escuro", value: "#0a3a1a" },
+  { label: "Vinho", value: "#3a0a1e" },
+];
 
 const CANVAS_W = 1080;
 const CANVAS_H = 1350;
