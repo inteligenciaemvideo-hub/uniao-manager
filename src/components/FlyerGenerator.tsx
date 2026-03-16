@@ -19,6 +19,7 @@ interface FlyerGeneratorProps {
   homeScore?: number | null;
   awayScore?: number | null;
   sponsors?: Sponsor[];
+  teamLogoUrl?: string | null;
 }
 
 type MatchSide = "home" | "away";
