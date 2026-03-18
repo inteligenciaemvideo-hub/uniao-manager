@@ -153,15 +153,20 @@ const PlayerDetail = () => {
           {fees.length > 0 ? (
             <div className="space-y-2 mb-3">
               {fees.map(fee => (
-                <div key={fee.id} className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
-                  <div>
-                    <p className="text-sm font-medium">{fee.description}</p>
-                    <p className="text-[10px] text-muted-foreground">{new Date(fee.date).toLocaleDateString("pt-BR")}</p>
+                <div key={fee.id} className="bg-secondary/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{fee.description}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(fee.date).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">R$ {Number(fee.amount)}</p>
+                      <span className={`text-[10px] font-medium ${fee.paid ? "text-success" : "text-destructive"}`}>{fee.paid ? "Pago" : "Pendente"}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">R$ {Number(fee.amount)}</p>
-                    <span className={`text-[10px] font-medium ${fee.paid ? "text-success" : "text-destructive"}`}>{fee.paid ? "Pago" : "Pendente"}</span>
-                  </div>
+                  {(fee as any).proof_url && (
+                    <a href={(fee as any).proof_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-primary underline">📎 Ver comprovante</a>
+                  )}
                 </div>
               ))}
             </div>
