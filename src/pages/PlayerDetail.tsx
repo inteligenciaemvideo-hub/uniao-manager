@@ -25,6 +25,8 @@ const PlayerDetail = () => {
   const [newComment, setNewComment] = useState("");
   const [newFeeDesc, setNewFeeDesc] = useState("");
   const [newFeeAmount, setNewFeeAmount] = useState("");
+  const [newFeeProof, setNewFeeProof] = useState<File | null>(null);
+  const feeProofRef = useState<HTMLInputElement | null>(null);
 
   if (isLoading) return <div className="px-4 py-10 text-center text-muted-foreground">Carregando...</div>;
   if (!player) return <div className="px-4 py-10 text-center"><p className="text-muted-foreground">Atleta não encontrado</p></div>;
