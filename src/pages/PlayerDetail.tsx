@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, Phone, AlertCircle, Target, Handshake, SquareSlash, CircleX, MessageSquare, Receipt, Send, Plus, Image, HeartCrack } from "lucide-react";
-import { usePlayer, useUpdatePlayer, usePlayerComments, useAddComment, usePlayerFees, useAddFee, useMonthlyPayments, useEventAttendance } from "@/hooks/useSupabase";
+import { ArrowLeft, Phone, AlertCircle, Target, Handshake, SquareSlash, CircleX, MessageSquare, Receipt, Send, Plus, Upload, HeartCrack, UserX, UserCheck } from "lucide-react";
+import { usePlayer, useUpdatePlayer, usePlayerComments, useAddComment, usePlayerFees, useAddFee, useMonthlyPayments, useEventAttendance, uploadPhoto } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
