@@ -6,7 +6,7 @@ import PlayerAvatar from "@/components/PlayerAvatar";
 import { Input } from "@/components/ui/input";
 
 const positions = ["Todos", "Goleiro", "Zagueiro", "Lateral", "Meio-campo", "Atacante"];
-const statuses = ["Todos", "Ativo", "Inativo"];
+const statuses = ["Ativo", "Inativo"];
 
 const Squad = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const Squad = () => {
   const { data: payments = [] } = useMonthlyPayments();
   const [search, setSearch] = useState("");
   const [posFilter, setPosFilter] = useState("Todos");
-  const [statusFilter, setStatusFilter] = useState("Todos");
+  const [statusFilter, setStatusFilter] = useState("Ativo");
 
   const getPendingMonths = (playerId: string) =>
     payments.filter(p => p.player_id === playerId && !p.paid).length;
@@ -22,7 +22,7 @@ const Squad = () => {
   const filtered = players.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.nickname.toLowerCase().includes(search.toLowerCase());
     const matchPos = posFilter === "Todos" || (p.positions || []).includes(posFilter);
-    const matchStatus = statusFilter === "Todos" || p.status === statusFilter;
+    const matchStatus = p.status === statusFilter;
     return matchSearch && matchPos && matchStatus;
   });
 
@@ -65,7 +65,6 @@ const Squad = () => {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold truncate">{player.name}</p>
                     {player.injured && <HeartCrack size={14} className="text-destructive shrink-0" />}
-                    {player.status === "Inativo" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Inativo</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-muted-foreground">{(player.positions || []).join(", ")}</span>

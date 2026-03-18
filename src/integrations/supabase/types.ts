@@ -316,6 +316,7 @@ export type Database = {
           id: string
           paid: boolean
           player_id: string
+          proof_url: string | null
         }
         Insert: {
           amount: number
@@ -325,6 +326,7 @@ export type Database = {
           id?: string
           paid?: boolean
           player_id: string
+          proof_url?: string | null
         }
         Update: {
           amount?: number
@@ -334,6 +336,7 @@ export type Database = {
           id?: string
           paid?: boolean
           player_id?: string
+          proof_url?: string | null
         }
         Relationships: [
           {

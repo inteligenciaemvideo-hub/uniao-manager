@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, Phone, AlertCircle, Target, Handshake, SquareSlash, CircleX, MessageSquare, Receipt, Send, Plus, Image, HeartCrack } from "lucide-react";
-import { usePlayer, useUpdatePlayer, usePlayerComments, useAddComment, usePlayerFees, useAddFee, useMonthlyPayments, useEventAttendance } from "@/hooks/useSupabase";
+import { ArrowLeft, Phone, AlertCircle, Target, Handshake, SquareSlash, CircleX, MessageSquare, Receipt, Send, Plus, Upload, HeartCrack, UserX, UserCheck } from "lucide-react";
+import { usePlayer, useUpdatePlayer, usePlayerComments, useAddComment, usePlayerFees, useAddFee, useMonthlyPayments, useEventAttendance, uploadPhoto } from "@/hooks/useSupabase";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +25,8 @@ const PlayerDetail = () => {
   const [newComment, setNewComment] = useState("");
   const [newFeeDesc, setNewFeeDesc] = useState("");
   const [newFeeAmount, setNewFeeAmount] = useState("");
+  const [newFeeProof, setNewFeeProof] = useState<File | null>(null);
+  const feeProofRef = useState<HTMLInputElement | null>(null);
 
   if (isLoading) return <div className="px-4 py-10 text-center text-muted-foreground">Carregando...</div>;
   if (!player) return <div className="px-4 py-10 text-center"><p className="text-muted-foreground">Atleta não encontrado</p></div>;
@@ -46,10 +48,22 @@ const PlayerDetail = () => {
 
   const handleAddFee = async () => {
     if (!newFeeDesc.trim() || !newFeeAmount) return;
-    await addFee.mutateAsync({ player_id: player.id, description: newFeeDesc.trim(), amount: parseFloat(newFeeAmount), paid: false, date: new Date().toISOString().split("T")[0] });
+    let proof_url = "";
+    if (newFeeProof) {
+      const path = `fees/${Date.now()}-${newFeeProof.name}`;
+      proof_url = await uploadPhoto("photos", path, newFeeProof);
+    }
+    await addFee.mutateAsync({ player_id: player.id, description: newFeeDesc.trim(), amount: parseFloat(newFeeAmount), paid: false, date: new Date().toISOString().split("T")[0], proof_url });
     setNewFeeDesc("");
     setNewFeeAmount("");
+    setNewFeeProof(null);
     toast.success("Taxa adicionada!");
+  };
+
+  const toggleStatus = async () => {
+    const newStatus = player.status === "Ativo" ? "Inativo" : "Ativo";
+    await updatePlayer.mutateAsync({ id: player.id, status: newStatus });
+    toast.success(newStatus === "Inativo" ? "Atleta inativado!" : "Atleta reativado!");
   };
 
   const handleSatisfaction = async (emoji: SatisfactionEmoji) => {
@@ -80,10 +94,14 @@ const PlayerDetail = () => {
         </div>
       </div>
 
-      <div className="px-4 mb-4">
+      <div className="px-4 mb-4 space-y-2">
         <button onClick={toggleInjured} className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${player.injured ? "bg-destructive/20 text-destructive border border-destructive/40" : "bg-secondary text-muted-foreground border border-border"}`}>
           <HeartCrack size={16} />
           {player.injured ? "Lesionado — Clique para retirar" : "Marcar como Lesionado"}
+        </button>
+        <button onClick={toggleStatus} className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${player.status === "Inativo" ? "bg-success/20 text-success border border-success/40" : "bg-warning/20 text-warning border border-warning/40"}`}>
+          {player.status === "Inativo" ? <UserCheck size={16} /> : <UserX size={16} />}
+          {player.status === "Inativo" ? "Reativar Atleta" : "Inativar Atleta"}
         </button>
       </div>
 
@@ -135,22 +153,36 @@ const PlayerDetail = () => {
           {fees.length > 0 ? (
             <div className="space-y-2 mb-3">
               {fees.map(fee => (
-                <div key={fee.id} className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
-                  <div>
-                    <p className="text-sm font-medium">{fee.description}</p>
-                    <p className="text-[10px] text-muted-foreground">{new Date(fee.date).toLocaleDateString("pt-BR")}</p>
+                <div key={fee.id} className="bg-secondary/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{fee.description}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(fee.date).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">R$ {Number(fee.amount)}</p>
+                      <span className={`text-[10px] font-medium ${fee.paid ? "text-success" : "text-destructive"}`}>{fee.paid ? "Pago" : "Pendente"}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">R$ {Number(fee.amount)}</p>
-                    <span className={`text-[10px] font-medium ${fee.paid ? "text-success" : "text-destructive"}`}>{fee.paid ? "Pago" : "Pendente"}</span>
-                  </div>
+                  {(fee as any).proof_url && (
+                    <a href={(fee as any).proof_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-primary underline">📎 Ver comprovante</a>
+                  )}
                 </div>
               ))}
             </div>
           ) : <p className="text-xs text-muted-foreground mb-3">Nenhuma taxa registrada.</p>}
-          <div className="flex gap-2">
-            <Input placeholder="Descrição da taxa" value={newFeeDesc} onChange={(e) => setNewFeeDesc(e.target.value)} className="bg-secondary/30 border-border text-sm" />
-            <Input placeholder="R$" type="number" value={newFeeAmount} onChange={(e) => setNewFeeAmount(e.target.value)} className="bg-secondary/30 border-border text-sm w-20" />
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 space-y-2">
+              <div className="flex gap-2">
+                <Input placeholder="Descrição da taxa" value={newFeeDesc} onChange={(e) => setNewFeeDesc(e.target.value)} className="bg-secondary/30 border-border text-sm" />
+                <Input placeholder="R$" type="number" value={newFeeAmount} onChange={(e) => setNewFeeAmount(e.target.value)} className="bg-secondary/30 border-border text-sm w-20" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Upload size={14} />
+                <span>{newFeeProof ? newFeeProof.name : "Anexar comprovante"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) setNewFeeProof(e.target.files[0]); }} />
+              </label>
+            </div>
             <button onClick={handleAddFee} className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shrink-0"><Plus size={16} /></button>
           </div>
         </div>

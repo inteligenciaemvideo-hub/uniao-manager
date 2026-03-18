@@ -1,0 +1,1 @@
+ALTER TABLE public.player_fees ADD COLUMN proof_url text DEFAULT '';
