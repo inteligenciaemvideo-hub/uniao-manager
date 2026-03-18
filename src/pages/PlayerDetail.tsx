@@ -48,10 +48,22 @@ const PlayerDetail = () => {
 
   const handleAddFee = async () => {
     if (!newFeeDesc.trim() || !newFeeAmount) return;
-    await addFee.mutateAsync({ player_id: player.id, description: newFeeDesc.trim(), amount: parseFloat(newFeeAmount), paid: false, date: new Date().toISOString().split("T")[0] });
+    let proof_url = "";
+    if (newFeeProof) {
+      const path = `fees/${Date.now()}-${newFeeProof.name}`;
+      proof_url = await uploadPhoto("photos", path, newFeeProof);
+    }
+    await addFee.mutateAsync({ player_id: player.id, description: newFeeDesc.trim(), amount: parseFloat(newFeeAmount), paid: false, date: new Date().toISOString().split("T")[0], proof_url });
     setNewFeeDesc("");
     setNewFeeAmount("");
+    setNewFeeProof(null);
     toast.success("Taxa adicionada!");
+  };
+
+  const toggleStatus = async () => {
+    const newStatus = player.status === "Ativo" ? "Inativo" : "Ativo";
+    await updatePlayer.mutateAsync({ id: player.id, status: newStatus });
+    toast.success(newStatus === "Inativo" ? "Atleta inativado!" : "Atleta reativado!");
   };
 
   const handleSatisfaction = async (emoji: SatisfactionEmoji) => {
