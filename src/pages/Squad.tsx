@@ -6,7 +6,7 @@ import PlayerAvatar from "@/components/PlayerAvatar";
 import { Input } from "@/components/ui/input";
 
 const positions = ["Todos", "Goleiro", "Zagueiro", "Lateral", "Meio-campo", "Atacante"];
-const statuses = ["Todos", "Ativo", "Inativo"];
+const statuses = ["Ativo", "Inativo"];
 
 const Squad = () => {
   const navigate = useNavigate();
