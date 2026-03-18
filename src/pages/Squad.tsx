@@ -22,7 +22,7 @@ const Squad = () => {
   const filtered = players.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.nickname.toLowerCase().includes(search.toLowerCase());
     const matchPos = posFilter === "Todos" || (p.positions || []).includes(posFilter);
-    const matchStatus = statusFilter === "Todos" || p.status === statusFilter;
+    const matchStatus = p.status === statusFilter;
     return matchSearch && matchPos && matchStatus;
   });
 

@@ -166,9 +166,18 @@ const PlayerDetail = () => {
               ))}
             </div>
           ) : <p className="text-xs text-muted-foreground mb-3">Nenhuma taxa registrada.</p>}
-          <div className="flex gap-2">
-            <Input placeholder="Descrição da taxa" value={newFeeDesc} onChange={(e) => setNewFeeDesc(e.target.value)} className="bg-secondary/30 border-border text-sm" />
-            <Input placeholder="R$" type="number" value={newFeeAmount} onChange={(e) => setNewFeeAmount(e.target.value)} className="bg-secondary/30 border-border text-sm w-20" />
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 space-y-2">
+              <div className="flex gap-2">
+                <Input placeholder="Descrição da taxa" value={newFeeDesc} onChange={(e) => setNewFeeDesc(e.target.value)} className="bg-secondary/30 border-border text-sm" />
+                <Input placeholder="R$" type="number" value={newFeeAmount} onChange={(e) => setNewFeeAmount(e.target.value)} className="bg-secondary/30 border-border text-sm w-20" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Upload size={14} />
+                <span>{newFeeProof ? newFeeProof.name : "Anexar comprovante"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) setNewFeeProof(e.target.files[0]); }} />
+              </label>
+            </div>
             <button onClick={handleAddFee} className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shrink-0"><Plus size={16} /></button>
           </div>
         </div>
