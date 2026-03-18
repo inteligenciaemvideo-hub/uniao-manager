@@ -14,7 +14,7 @@ const Squad = () => {
   const { data: payments = [] } = useMonthlyPayments();
   const [search, setSearch] = useState("");
   const [posFilter, setPosFilter] = useState("Todos");
-  const [statusFilter, setStatusFilter] = useState("Todos");
+  const [statusFilter, setStatusFilter] = useState("Ativo");
 
   const getPendingMonths = (playerId: string) =>
     payments.filter(p => p.player_id === playerId && !p.paid).length;
