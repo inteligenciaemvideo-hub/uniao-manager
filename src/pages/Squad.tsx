@@ -65,7 +65,6 @@ const Squad = () => {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold truncate">{player.name}</p>
                     {player.injured && <HeartCrack size={14} className="text-destructive shrink-0" />}
-                    {player.status === "Inativo" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Inativo</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-muted-foreground">{(player.positions || []).join(", ")}</span>
