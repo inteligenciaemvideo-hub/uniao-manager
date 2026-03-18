@@ -115,7 +115,7 @@ export const usePlayerFees = (playerId?: string) =>
 export const useAddFee = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (f: { player_id: string; description: string; amount: number; paid: boolean; date: string }) => {
+    mutationFn: async (f: { player_id: string; description: string; amount: number; paid: boolean; date: string; proof_url?: string }) => {
       const { error } = await supabase.from("player_fees").insert(f);
       if (error) throw error;
     },
