@@ -94,10 +94,14 @@ const PlayerDetail = () => {
         </div>
       </div>
 
-      <div className="px-4 mb-4">
+      <div className="px-4 mb-4 space-y-2">
         <button onClick={toggleInjured} className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${player.injured ? "bg-destructive/20 text-destructive border border-destructive/40" : "bg-secondary text-muted-foreground border border-border"}`}>
           <HeartCrack size={16} />
           {player.injured ? "Lesionado — Clique para retirar" : "Marcar como Lesionado"}
+        </button>
+        <button onClick={toggleStatus} className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${player.status === "Inativo" ? "bg-success/20 text-success border border-success/40" : "bg-warning/20 text-warning border border-warning/40"}`}>
+          {player.status === "Inativo" ? <UserCheck size={16} /> : <UserX size={16} />}
+          {player.status === "Inativo" ? "Reativar Atleta" : "Inativar Atleta"}
         </button>
       </div>
 
